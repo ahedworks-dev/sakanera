@@ -614,27 +614,28 @@ export default function RoomatePlatform() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto bg-white min-h-screen pb-20">
+    <div className="bg-white min-h-screen pb-20">
       {/* Header */}
       <div className="bg-gradient-to-r from-sky-400 to-blue-500 text-white p-4 sticky top-0 z-50 shadow-lg">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <Home className="w-8 h-8" />
-            <h1 className="text-2xl font-bold">{t[language].logo}</h1>
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <Home className="w-6 h-6 sm:w-8 sm:h-8" />
+            <h1 className="text-xl sm:text-2xl font-bold">{t[language].logo}</h1>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             <button
               onClick={() => setLanguage(language === 'de' ? 'en' : 'de')}
-              className="px-3 py-1 bg-white/20 rounded-lg hover:bg-white/30 transition"
+              className="px-2 py-1 sm:px-3 sm:py-1 bg-white/20 rounded-lg hover:bg-white/30 transition text-lg sm:text-xl"
             >
               {language === 'de' ? '🇩🇪' : '🇬🇧'}
             </button>
             <button
               onClick={handlePostAdClick}
-              className="bg-white text-sky-500 px-4 py-2 rounded-lg font-semibold hover:shadow-lg transition flex items-center space-x-2"
+              className="bg-white text-sky-500 px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-semibold hover:shadow-lg transition flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base"
             >
-              <Plus className="w-5 h-5" />
-              <span>{t[language].postAd}</span>
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline">{t[language].postAd}</span>
+              <span className="sm:hidden">+</span>
             </button>
           </div>
         </div>
@@ -642,16 +643,15 @@ export default function RoomatePlatform() {
 
       {/* Hero Section */}
       {currentView === 'home' && !showAddListing && (
-        <div className="bg-gradient-to-r from-sky-50 to-blue-50 p-8 text-center">
-          <h2 className="text-4xl font-bold text-gray-800 mb-2">{t[language].heroTitle}</h2>
-          <p className="text-xl text-sky-600 mb-1">{t[language].heroSubtitle}</p>
-          <p className="text-gray-600">{t[language].heroDescription}</p>
+        <div className="bg-gradient-to-r from-sky-50 to-blue-50 p-4 sm:p-6 md:p-8 text-center">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">{t[language].heroTitle}</h2>
+          <p className="text-lg sm:text-xl text-sky-600 mb-1">{t[language].heroSubtitle}</p>
+          <p className="text-sm sm:text-base text-gray-600">{t[language].heroDescription}</p>
         </div>
       )}
 
       {/* Main Content */}
-      <div className="p-4">
-        {currentView === 'home' && !showAddListing && (
+      <div className="max-w-6xl mx-auto p-4">{currentView === 'home' && !showAddListing && (
           <>
             {/* Filter Section */}
             <div className="bg-white border rounded-lg p-4 mb-6 shadow-sm">
@@ -1519,35 +1519,35 @@ export default function RoomatePlatform() {
       )}
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg">
-        <div className="max-w-6xl mx-auto flex justify-around items-center py-3">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
+        <div className="max-w-6xl mx-auto flex justify-around items-center py-2 sm:py-3 px-2">
           <button
             onClick={() => setCurrentView('home')}
-            className={`flex flex-col items-center space-y-1 ${currentView === 'home' ? 'text-sky-500' : 'text-gray-400'}`}
+            className={`flex flex-col items-center space-y-0.5 sm:space-y-1 ${currentView === 'home' ? 'text-sky-500' : 'text-gray-400'} transition-colors`}
           >
-            <Home className="w-6 h-6" />
-            <span className="text-xs">{t[language].home}</span>
+            <Home className="w-5 h-5 sm:w-6 sm:h-6" />
+            <span className="text-[10px] sm:text-xs">{t[language].home}</span>
           </button>
           <button
             onClick={() => setCurrentView('home')}
-            className={`flex flex-col items-center space-y-1 ${currentView === 'home' ? 'text-sky-500' : 'text-gray-400'}`}
+            className={`flex flex-col items-center space-y-0.5 sm:space-y-1 ${currentView === 'home' ? 'text-sky-500' : 'text-gray-400'} transition-colors`}
           >
-            <Search className="w-6 h-6" />
-            <span className="text-xs">{t[language].search}</span>
+            <Search className="w-5 h-5 sm:w-6 sm:h-6" />
+            <span className="text-[10px] sm:text-xs">{t[language].search}</span>
           </button>
           <button
             onClick={() => setCurrentView('favorites')}
-            className={`flex flex-col items-center space-y-1 ${currentView === 'favorites' ? 'text-sky-500' : 'text-gray-400'}`}
+            className={`flex flex-col items-center space-y-0.5 sm:space-y-1 ${currentView === 'favorites' ? 'text-sky-500' : 'text-gray-400'} transition-colors`}
           >
-            <Heart className="w-6 h-6" />
-            <span className="text-xs">{t[language].favorites}</span>
+            <Heart className="w-5 h-5 sm:w-6 sm:h-6" />
+            <span className="text-[10px] sm:text-xs">{t[language].favorites}</span>
           </button>
           <button
             onClick={() => setCurrentView('profile')}
-            className={`flex flex-col items-center space-y-1 ${currentView === 'profile' ? 'text-sky-500' : 'text-gray-400'}`}
+            className={`flex flex-col items-center space-y-0.5 sm:space-y-1 ${currentView === 'profile' ? 'text-sky-500' : 'text-gray-400'} transition-colors`}
           >
-            <User className="w-6 h-6" />
-            <span className="text-xs">{t[language].profile}</span>
+            <User className="w-5 h-5 sm:w-6 sm:h-6" />
+            <span className="text-[10px] sm:text-xs">{t[language].profile}</span>
           </button>
         </div>
       </div>
