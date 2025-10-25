@@ -18,6 +18,7 @@ export default function RoomatePlatform() {
       heroTitle: 'Zahle die Hälfte der Miete',
       heroSubtitle: 'Spare Geld & finde coole Mitbewohner',
       heroDescription: 'Teile deine Wohnung, teile dein Leben',
+      exploreCities: 'Entdecke die Städte',
       
       // Filter
       filter: 'Filter',
@@ -56,6 +57,22 @@ export default function RoomatePlatform() {
       favorites: 'Favoriten',
       profile: 'Profil',
       about: 'Über Uns',
+      
+      // Footer
+      company: 'Unternehmen',
+      legal: 'Rechtliches',
+      support: 'Support',
+      imprint: 'Impressum',
+      privacy: 'Datenschutz',
+      terms: 'AGB',
+      contact: 'Kontakt',
+      faq: 'FAQ',
+      help: 'Hilfe',
+      aboutUs: 'Über uns',
+      careers: 'Karriere',
+      press: 'Presse',
+      copyright: '© 2024 sakanera. Alle Rechte vorbehalten.',
+      madeWith: 'Gemacht mit ❤️ in Deutschland',
       
       // Favorites
       myFavorites: 'Meine Favoriten',
@@ -187,6 +204,7 @@ export default function RoomatePlatform() {
       heroTitle: 'Pay Half the Rent',
       heroSubtitle: 'Save Money & Find Cool Roommates',
       heroDescription: 'Share Your Place, Share Your Life',
+      exploreCities: 'Explore Cities',
       
       // Filter
       filter: 'Filter',
@@ -225,6 +243,22 @@ export default function RoomatePlatform() {
       favorites: 'Favorites',
       profile: 'Profile',
       about: 'About Us',
+      
+      // Footer
+      company: 'Company',
+      legal: 'Legal',
+      support: 'Support',
+      imprint: 'Imprint',
+      privacy: 'Privacy',
+      terms: 'Terms',
+      contact: 'Contact',
+      faq: 'FAQ',
+      help: 'Help',
+      aboutUs: 'About us',
+      careers: 'Careers',
+      press: 'Press',
+      copyright: '© 2024 sakanera. All rights reserved.',
+      madeWith: 'Made with ❤️ in Germany',
       
       // Favorites
       myFavorites: 'My Favorites',
@@ -361,6 +395,7 @@ export default function RoomatePlatform() {
   const [availableCities, setAvailableCities] = useState(['Berlin', 'München', 'Hamburg', 'Köln', 'Frankfurt']);
   const [showCustomCity, setShowCustomCity] = useState(false);
   const [customCity, setCustomCity] = useState('');
+  const [showListings, setShowListings] = useState(false);
 
   const [filters, setFilters] = useState({
     city: '',
@@ -616,12 +651,15 @@ export default function RoomatePlatform() {
   };
 
   return (
-    <div className="bg-white min-h-screen pb-20">
+    <div className="bg-white min-h-screen">
       {/* Header */}
       <div className="bg-gradient-to-r from-sky-400 to-blue-500 text-white p-4 sticky top-0 z-50 shadow-lg">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           {/* Logo Links */}
-          <div className="flex items-center space-x-2 sm:space-x-3 cursor-pointer" onClick={() => setCurrentView('home')}>
+          <div className="flex items-center space-x-2 sm:space-x-3 cursor-pointer" onClick={() => {
+            setCurrentView('home');
+            setShowListings(false);
+          }}>
             <Home className="w-6 h-6 sm:w-8 sm:h-8" />
             <h1 className="text-xl sm:text-2xl font-bold">{t[language].logo}</h1>
           </div>
@@ -629,7 +667,10 @@ export default function RoomatePlatform() {
           {/* Navigation Rechts */}
           <div className="flex items-center space-x-3 sm:space-x-6">
             <button
-              onClick={() => setCurrentView('home')}
+              onClick={() => {
+                setCurrentView('home');
+                setShowListings(false);
+              }}
               className="hidden sm:block hover:text-white/80 transition font-medium"
             >
               {t[language].home}
@@ -657,17 +698,41 @@ export default function RoomatePlatform() {
         </div>
       </div>
 
-      {/* Hero Section */}
-      {currentView === 'home' && !showAddListing && (
-        <div className="bg-gradient-to-r from-sky-50 to-blue-50 p-4 sm:p-6 md:p-8 text-center">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2">{t[language].heroTitle}</h2>
-          <p className="text-lg sm:text-xl text-sky-600 mb-1">{t[language].heroSubtitle}</p>
-          <p className="text-sm sm:text-base text-gray-600">{t[language].heroDescription}</p>
-        </div>
-      )}
-
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto p-4">{currentView === 'home' && !showAddListing && (
+      <div className="max-w-6xl mx-auto p-4">
+        {/* Homepage - Große Landing Page */}
+        {currentView === 'home' && !showListings && !showAddListing && (
+          <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+            <div className="text-center max-w-2xl mx-auto px-4">
+              {/* Großes Logo */}
+              <div className="mb-8">
+                <div className="inline-block mb-6">
+                  <Home className="w-24 h-24 sm:w-32 sm:h-32 text-sky-400 mx-auto mb-4" />
+                </div>
+                <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-gray-800 mb-4">
+                  sakanera
+                </h1>
+                <p className="text-xl sm:text-2xl md:text-3xl text-gray-600 mb-3">
+                  {t[language].heroTitle}
+                </p>
+                <p className="text-lg sm:text-xl text-sky-600 mb-8">
+                  {t[language].heroSubtitle}
+                </p>
+              </div>
+
+              {/* Entdecke die Städte Button */}
+              <button
+                onClick={() => setShowListings(true)}
+                className="bg-gradient-to-r from-sky-400 to-blue-500 text-white px-8 sm:px-12 py-4 sm:py-5 rounded-full text-lg sm:text-xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-300"
+              >
+                {t[language].exploreCities}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Listings Ansicht */}
+        {currentView === 'home' && showListings && !showAddListing && (
           <>
             {/* Filter Section */}
             <div className="bg-white border rounded-lg p-4 mb-6 shadow-sm">
@@ -1096,7 +1161,313 @@ export default function RoomatePlatform() {
             </div>
           </div>
         )}
+
+        {/* Impressum Seite */}
+        {currentView === 'imprint' && (
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl font-bold mb-6">{t[language].imprint}</h2>
+            <div className="bg-white border rounded-lg p-6 sm:p-8 shadow-sm space-y-4">
+              <div>
+                <h3 className="text-xl font-bold mb-2">sakanera GmbH</h3>
+                <p className="text-gray-700">Musterstraße 123</p>
+                <p className="text-gray-700">50667 Köln</p>
+                <p className="text-gray-700">Deutschland</p>
+              </div>
+              <div>
+                <h4 className="font-bold mb-1">{language === 'de' ? 'Vertreten durch:' : 'Represented by:'}</h4>
+                <p className="text-gray-700">Max Mustermann (Geschäftsführer)</p>
+              </div>
+              <div>
+                <h4 className="font-bold mb-1">{language === 'de' ? 'Kontakt:' : 'Contact:'}</h4>
+                <p className="text-gray-700">E-Mail: info@sakanera.com</p>
+                <p className="text-gray-700">Telefon: +49 123 456 789</p>
+              </div>
+              <div>
+                <h4 className="font-bold mb-1">{language === 'de' ? 'Registereintrag:' : 'Register entry:'}</h4>
+                <p className="text-gray-700">Handelsregister: HRB 12345</p>
+                <p className="text-gray-700">Amtsgericht Köln</p>
+              </div>
+              <div>
+                <h4 className="font-bold mb-1">USt-IdNr.:</h4>
+                <p className="text-gray-700">DE123456789</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Datenschutz Seite */}
+        {currentView === 'privacy' && (
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl font-bold mb-6">{t[language].privacy}</h2>
+            <div className="bg-white border rounded-lg p-6 sm:p-8 shadow-sm space-y-6">
+              <div>
+                <h3 className="text-xl font-bold mb-3">
+                  {language === 'de' ? '1. Datenschutz auf einen Blick' : '1. Data Protection at a Glance'}
+                </h3>
+                <h4 className="font-bold mb-2">
+                  {language === 'de' ? 'Allgemeine Hinweise' : 'General Information'}
+                </h4>
+                <p className="text-gray-700 leading-relaxed mb-3">
+                  {language === 'de' 
+                    ? 'Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie diese Website besuchen.'
+                    : 'The following information provides a simple overview of what happens to your personal data when you visit this website.'}
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-bold mb-3">
+                  {language === 'de' ? '2. Datenerfassung auf dieser Website' : '2. Data Collection on this Website'}
+                </h3>
+                <h4 className="font-bold mb-2">
+                  {language === 'de' ? 'Wer ist verantwortlich für die Datenerfassung?' : 'Who is responsible for data collection?'}
+                </h4>
+                <p className="text-gray-700 leading-relaxed mb-3">
+                  {language === 'de'
+                    ? 'Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber. Dessen Kontaktdaten können Sie dem Impressum entnehmen.'
+                    : 'Data processing on this website is carried out by the website operator. You can find their contact details in the imprint.'}
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-bold mb-3">
+                  {language === 'de' ? '3. Ihre Rechte' : '3. Your Rights'}
+                </h3>
+                <p className="text-gray-700 leading-relaxed">
+                  {language === 'de'
+                    ? 'Sie haben jederzeit das Recht, unentgeltlich Auskunft über Herkunft, Empfänger und Zweck Ihrer gespeicherten personenbezogenen Daten zu erhalten. Sie haben außerdem ein Recht, die Berichtigung oder Löschung dieser Daten zu verlangen.'
+                    : 'You have the right to receive information about the origin, recipient, and purpose of your stored personal data free of charge at any time. You also have the right to request the correction or deletion of this data.'}
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-bold mb-3">
+                  {language === 'de' ? '4. Cookies' : '4. Cookies'}
+                </h3>
+                <p className="text-gray-700 leading-relaxed">
+                  {language === 'de'
+                    ? 'Unsere Website verwendet Cookies. Das sind kleine Textdateien, die Ihr Webbrowser auf Ihrem Endgerät speichert. Cookies helfen uns dabei, unser Angebot nutzerfreundlicher zu gestalten.'
+                    : 'Our website uses cookies. These are small text files that your web browser stores on your device. Cookies help us make our offer more user-friendly.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* AGB Seite */}
+        {currentView === 'terms' && (
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl font-bold mb-6">{t[language].terms}</h2>
+            <div className="bg-white border rounded-lg p-6 sm:p-8 shadow-sm space-y-6">
+              <div>
+                <h3 className="text-xl font-bold mb-3">
+                  {language === 'de' ? '1. Geltungsbereich' : '1. Scope of Application'}
+                </h3>
+                <p className="text-gray-700 leading-relaxed">
+                  {language === 'de'
+                    ? 'Diese Allgemeinen Geschäftsbedingungen (AGB) gelten für die Nutzung der Plattform sakanera.com. Mit der Registrierung akzeptieren Sie diese AGB.'
+                    : 'These General Terms and Conditions (GTC) apply to the use of the sakanera.com platform. By registering, you accept these GTC.'}
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-bold mb-3">
+                  {language === 'de' ? '2. Leistungen' : '2. Services'}
+                </h3>
+                <p className="text-gray-700 leading-relaxed mb-3">
+                  {language === 'de'
+                    ? 'sakanera vermittelt Wohnraum und Mitbewohner. Die Plattform stellt lediglich eine Vermittlungsplattform dar und ist nicht Vertragspartner der Miet- oder WG-Verträge.'
+                    : 'sakanera facilitates housing and roommates. The platform is merely a mediation platform and is not a contractual partner of rental or shared apartment agreements.'}
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-bold mb-3">
+                  {language === 'de' ? '3. Registrierung und Nutzerkonto' : '3. Registration and User Account'}
+                </h3>
+                <p className="text-gray-700 leading-relaxed">
+                  {language === 'de'
+                    ? 'Für die Nutzung bestimmter Funktionen ist eine Registrierung erforderlich. Sie verpflichten sich, wahrheitsgemäße Angaben zu machen und diese aktuell zu halten.'
+                    : 'Registration is required to use certain features. You agree to provide truthful information and keep it up to date.'}
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-bold mb-3">
+                  {language === 'de' ? '4. Zahlungsbedingungen' : '4. Payment Terms'}
+                </h3>
+                <p className="text-gray-700 leading-relaxed">
+                  {language === 'de'
+                    ? 'Die Preise für unsere Abonnements finden Sie auf der Plattform. Die Zahlung erfolgt im Voraus für den gewählten Zeitraum.'
+                    : 'The prices for our subscriptions can be found on the platform. Payment is made in advance for the selected period.'}
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-bold mb-3">
+                  {language === 'de' ? '5. Haftung' : '5. Liability'}
+                </h3>
+                <p className="text-gray-700 leading-relaxed">
+                  {language === 'de'
+                    ? 'sakanera haftet nicht für die Richtigkeit der Inserate oder für Schäden, die aus der Nutzung der Plattform entstehen, es sei denn, diese beruhen auf Vorsatz oder grober Fahrlässigkeit.'
+                    : 'sakanera is not liable for the accuracy of listings or for damages arising from the use of the platform, unless these are based on intent or gross negligence.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Kontakt Seite */}
+        {currentView === 'contact' && (
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl font-bold mb-6 text-center">{t[language].contact}</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div className="bg-gradient-to-br from-sky-50 to-blue-50 border rounded-lg p-6 shadow-sm">
+                <div className="text-4xl mb-3 text-center">📧</div>
+                <h3 className="text-xl font-bold mb-2 text-center">Email</h3>
+                <p className="text-gray-700 text-center">info@sakanera.com</p>
+                <p className="text-gray-700 text-center text-sm mt-2">
+                  {language === 'de' ? 'Wir antworten innerhalb von 24 Stunden' : 'We respond within 24 hours'}
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-br from-sky-50 to-blue-50 border rounded-lg p-6 shadow-sm">
+                <div className="text-4xl mb-3 text-center">📱</div>
+                <h3 className="text-xl font-bold mb-2 text-center">
+                  {language === 'de' ? 'Telefon' : 'Phone'}
+                </h3>
+                <p className="text-gray-700 text-center">+49 123 456 789</p>
+                <p className="text-gray-700 text-center text-sm mt-2">
+                  {language === 'de' ? 'Mo-Fr: 9:00 - 18:00 Uhr' : 'Mon-Fri: 9:00 AM - 6:00 PM'}
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white border rounded-lg p-6 sm:p-8 shadow-sm">
+              <h3 className="text-xl font-bold mb-4 text-center">
+                {language === 'de' ? '📍 Unsere Adresse' : '📍 Our Address'}
+              </h3>
+              <div className="text-center text-gray-700 space-y-1">
+                <p className="font-bold">sakanera GmbH</p>
+                <p>Musterstraße 123</p>
+                <p>50667 Köln</p>
+                <p>Deutschland</p>
+              </div>
+            </div>
+
+            <div className="mt-8 bg-gradient-to-r from-sky-400 to-blue-500 text-white rounded-lg p-6 text-center">
+              <h3 className="text-2xl font-bold mb-3">
+                {language === 'de' ? '💬 Häufig gestellte Fragen?' : '💬 Frequently Asked Questions?'}
+              </h3>
+              <p className="mb-4">
+                {language === 'de'
+                  ? 'Besuche unsere FAQ-Seite für schnelle Antworten!'
+                  : 'Visit our FAQ page for quick answers!'}
+              </p>
+              <button className="bg-white text-sky-500 px-6 py-2 rounded-lg font-bold hover:shadow-lg transition">
+                {t[language].faq}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white mt-12 pb-20">
+        <div className="max-w-6xl mx-auto px-4 py-8 sm:py-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+            {/* Unternehmen */}
+            <div>
+              <h3 className="font-bold text-lg mb-4">{t[language].company}</h3>
+              <ul className="space-y-2 text-gray-300">
+                <li>
+                  <button onClick={() => setCurrentView('about')} className="hover:text-white transition">
+                    {t[language].aboutUs}
+                  </button>
+                </li>
+                <li>
+                  <button className="hover:text-white transition">
+                    {t[language].careers}
+                  </button>
+                </li>
+                <li>
+                  <button className="hover:text-white transition">
+                    {t[language].press}
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Rechtliches */}
+            <div>
+              <h3 className="font-bold text-lg mb-4">{t[language].legal}</h3>
+              <ul className="space-y-2 text-gray-300">
+                <li>
+                  <button onClick={() => setCurrentView('imprint')} className="hover:text-white transition">
+                    {t[language].imprint}
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => setCurrentView('privacy')} className="hover:text-white transition">
+                    {t[language].privacy}
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => setCurrentView('terms')} className="hover:text-white transition">
+                    {t[language].terms}
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Support */}
+            <div>
+              <h3 className="font-bold text-lg mb-4">{t[language].support}</h3>
+              <ul className="space-y-2 text-gray-300">
+                <li>
+                  <button onClick={() => setCurrentView('contact')} className="hover:text-white transition">
+                    {t[language].contact}
+                  </button>
+                </li>
+                <li>
+                  <button className="hover:text-white transition">
+                    {t[language].faq}
+                  </button>
+                </li>
+                <li>
+                  <button className="hover:text-white transition">
+                    {t[language].help}
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Social Media / Logo */}
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <Home className="w-8 h-8 text-sky-400" />
+                <span className="font-bold text-2xl">sakanera</span>
+              </div>
+              <p className="text-gray-300 text-sm mb-4">
+                {language === 'de' 
+                  ? 'Die Plattform für Mitbewohner & WG-Zimmer'
+                  : 'The platform for roommates & shared apartments'}
+              </p>
+              <div className="flex space-x-4">
+                <button className="text-gray-300 hover:text-white transition text-2xl">📘</button>
+                <button className="text-gray-300 hover:text-white transition text-2xl">📷</button>
+                <button className="text-gray-300 hover:text-white transition text-2xl">🐦</button>
+              </div>
+            </div>
+          </div>
+
+          {/* Copyright */}
+          <div className="border-t border-gray-700 pt-6 text-center">
+            <p className="text-gray-400 text-sm mb-2">{t[language].copyright}</p>
+            <p className="text-gray-400 text-sm">{t[language].madeWith}</p>
+          </div>
+        </div>
+      </footer>
 
       {/* Subscription Modal */}
       {showSubscription && (
@@ -1629,7 +2000,10 @@ export default function RoomatePlatform() {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
         <div className="max-w-6xl mx-auto flex justify-around items-center py-2 sm:py-3 px-2">
           <button
-            onClick={() => setCurrentView('home')}
+            onClick={() => {
+              setCurrentView('home');
+              setShowListings(false);
+            }}
             className={`flex flex-col items-center space-y-0.5 sm:space-y-1 ${currentView === 'home' ? 'text-sky-500' : 'text-gray-400'} transition-colors`}
           >
             <Home className="w-5 h-5 sm:w-6 sm:h-6" />
