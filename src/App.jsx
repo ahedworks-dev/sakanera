@@ -72,7 +72,15 @@ export default function RoomatePlatform() {
       careers: 'Karriere',
       press: 'Presse',
       copyright: '© 2024 sakanera. Alle Rechte vorbehalten.',
-      madeWith: 'Gemacht mit ❤️ in Deutschland',
+      feedback: 'Feedback senden',
+      feedbackTitle: 'Dein Feedback',
+      feedbackDesc: 'Wir freuen uns über dein Feedback! Teile uns deine Meinung, Vorschläge oder Probleme mit.',
+      yourName: 'Dein Name',
+      yourEmail: 'Deine E-Mail',
+      message: 'Nachricht',
+      messagePlaceholder: 'Schreibe uns deine Nachricht...',
+      submit: 'Absenden',
+      feedbackSuccess: 'Vielen Dank für dein Feedback!',
       
       // Favorites
       myFavorites: 'Meine Favoriten',
@@ -258,7 +266,15 @@ export default function RoomatePlatform() {
       careers: 'Careers',
       press: 'Press',
       copyright: '© 2024 sakanera. All rights reserved.',
-      madeWith: 'Made with ❤️ in Germany',
+      feedback: 'Send Feedback',
+      feedbackTitle: 'Your Feedback',
+      feedbackDesc: 'We appreciate your feedback! Share your opinion, suggestions or issues with us.',
+      yourName: 'Your Name',
+      yourEmail: 'Your Email',
+      message: 'Message',
+      messagePlaceholder: 'Write your message...',
+      submit: 'Submit',
+      feedbackSuccess: 'Thank you for your feedback!',
       
       // Favorites
       myFavorites: 'My Favorites',
@@ -1370,6 +1386,76 @@ export default function RoomatePlatform() {
             </div>
           </div>
         )}
+
+        {/* Feedback Seite */}
+        {currentView === 'feedback' && (
+          <div className="max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold mb-6 text-center">{t[language].feedbackTitle}</h2>
+            
+            <div className="bg-gradient-to-r from-sky-50 to-blue-50 rounded-lg p-4 mb-6 text-center">
+              <p className="text-gray-700">{t[language].feedbackDesc}</p>
+            </div>
+
+            <div className="bg-white border rounded-lg p-6 sm:p-8 shadow-sm">
+              <form className="space-y-5" onSubmit={(e) => {
+                e.preventDefault();
+                alert(t[language].feedbackSuccess);
+                e.target.reset();
+              }}>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">
+                    {t[language].yourName} *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent"
+                    placeholder={language === 'de' ? 'Max Mustermann' : 'John Doe'}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">
+                    {t[language].yourEmail} *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent"
+                    placeholder="max@example.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">
+                    {t[language].message} *
+                  </label>
+                  <textarea
+                    required
+                    rows="6"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent resize-none"
+                    placeholder={t[language].messagePlaceholder}
+                  ></textarea>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-sky-400 to-blue-500 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105"
+                >
+                  {t[language].submit}
+                </button>
+              </form>
+            </div>
+
+            <div className="mt-6 text-center text-gray-600 text-sm">
+              <p>
+                {language === 'de' 
+                  ? '* Pflichtfelder. Deine Daten werden vertraulich behandelt.'
+                  : '* Required fields. Your data will be treated confidentially.'}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Footer */}
@@ -1383,16 +1469,6 @@ export default function RoomatePlatform() {
                 <li>
                   <button onClick={() => setCurrentView('about')} className="hover:text-white transition">
                     {t[language].aboutUs}
-                  </button>
-                </li>
-                <li>
-                  <button className="hover:text-white transition">
-                    {t[language].careers}
-                  </button>
-                </li>
-                <li>
-                  <button className="hover:text-white transition">
-                    {t[language].press}
                   </button>
                 </li>
               </ul>
@@ -1430,13 +1506,8 @@ export default function RoomatePlatform() {
                   </button>
                 </li>
                 <li>
-                  <button className="hover:text-white transition">
-                    {t[language].faq}
-                  </button>
-                </li>
-                <li>
-                  <button className="hover:text-white transition">
-                    {t[language].help}
+                  <button onClick={() => setCurrentView('feedback')} className="hover:text-white transition">
+                    {t[language].feedback}
                   </button>
                 </li>
               </ul>
@@ -1463,8 +1534,7 @@ export default function RoomatePlatform() {
 
           {/* Copyright */}
           <div className="border-t border-gray-700 pt-6 text-center">
-            <p className="text-gray-400 text-sm mb-2">{t[language].copyright}</p>
-            <p className="text-gray-400 text-sm">{t[language].madeWith}</p>
+            <p className="text-gray-400 text-sm">{t[language].copyright}</p>
           </div>
         </div>
       </footer>
