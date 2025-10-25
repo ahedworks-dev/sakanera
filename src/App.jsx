@@ -7,6 +7,7 @@ export default function RoomatePlatform() {
   const [favorites, setFavorites] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
   const [language, setLanguage] = useState('de');
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
 
   // Browser History Navigation
   useEffect(() => {
@@ -32,6 +33,18 @@ export default function RoomatePlatform() {
       window.removeEventListener('popstate', handlePopState);
     };
   }, []);
+
+  // Dropdown schließen bei Klick außerhalb
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showProfileDropdown && !event.target.closest('.profile-dropdown-container')) {
+        setShowProfileDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showProfileDropdown]);
 
   // Funktion zum Navigation mit History
   const navigateTo = (view, showListingsValue = false) => {
@@ -734,6 +747,44 @@ export default function RoomatePlatform() {
               <span className="hidden sm:inline">{t[language].postAd}</span>
               <span className="sm:hidden">+</span>
             </button>
+            
+            {/* Profile Button mit Dropdown */}
+            <div className="relative profile-dropdown-container">
+              <button
+                onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                className="flex items-center space-x-2 hover:text-white/80 transition"
+              >
+                <User className="w-5 h-5 sm:w-6 sm:h-6" />
+                <span className="hidden sm:inline">{t[language].profile}</span>
+              </button>
+              
+              {/* Dropdown Menu */}
+              {showProfileDropdown && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border py-2 z-50">
+                  <button
+                    onClick={() => {
+                      navigateTo('profile')
+                      setShowProfileDropdown(false)
+                    }}
+                    className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-2 text-gray-700"
+                  >
+                    <User className="w-4 h-4" />
+                    <span>{t[language].profile}</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigateTo('favorites')
+                      setShowProfileDropdown(false)
+                    }}
+                    className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-2 text-gray-700"
+                  >
+                    <Heart className="w-4 h-4" />
+                    <span>{t[language].favorites}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+            
             <button
               onClick={() => setLanguage(language === 'de' ? 'en' : 'de')}
               className="px-2 py-1 sm:px-3 sm:py-1 bg-white/20 rounded-lg hover:bg-white/30 transition text-lg sm:text-xl"
@@ -1489,7 +1540,7 @@ export default function RoomatePlatform() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white mt-12 pb-20">
+      <footer className="bg-gray-900 text-white mt-12">
         <div className="max-w-6xl mx-auto px-4 py-8 sm:py-12">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
             {/* Unternehmen */}
@@ -2091,32 +2142,6 @@ export default function RoomatePlatform() {
         </div>
       )}
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
-        <div className="max-w-6xl mx-auto flex justify-around items-center py-2 sm:py-3 px-2">
-          <button
-            onClick={() => navigateTo('home', false)}
-            className={`flex flex-col items-center space-y-0.5 sm:space-y-1 ${currentView === 'home' ? 'text-sky-500' : 'text-gray-400'} transition-colors`}
-          >
-            <Home className="w-5 h-5 sm:w-6 sm:h-6" />
-            <span className="text-[10px] sm:text-xs">{t[language].home}</span>
-          </button>
-          <button
-            onClick={() => navigateTo('favorites')}
-            className={`flex flex-col items-center space-y-0.5 sm:space-y-1 ${currentView === 'favorites' ? 'text-sky-500' : 'text-gray-400'} transition-colors`}
-          >
-            <Heart className="w-5 h-5 sm:w-6 sm:h-6" />
-            <span className="text-[10px] sm:text-xs">{t[language].favorites}</span>
-          </button>
-          <button
-            onClick={() => navigateTo('profile')}
-            className={`flex flex-col items-center space-y-0.5 sm:space-y-1 ${currentView === 'profile' ? 'text-sky-500' : 'text-gray-400'} transition-colors`}
-          >
-            <User className="w-5 h-5 sm:w-6 sm:h-6" />
-            <span className="text-[10px] sm:text-xs">{t[language].profile}</span>
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
