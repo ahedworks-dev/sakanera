@@ -7,6 +7,42 @@ export default function RoomatePlatform() {
   const [favorites, setFavorites] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
   const [language, setLanguage] = useState('de');
+
+  // Browser History Navigation
+  useEffect(() => {
+    // Initiale History
+    window.history.replaceState({ view: 'home', showListings: false }, '', '');
+
+    // Zurück-Button Handler
+    const handlePopState = (event) => {
+      if (event.state) {
+        setCurrentView(event.state.view);
+        if (event.state.showListings !== undefined) {
+          setShowListings(event.state.showListings);
+        }
+        if (event.state.view === 'home' && !event.state.showListings) {
+          setShowAddListing(false);
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  // Funktion zum Navigation mit History
+  const navigateTo = (view, showListingsValue = false) => {
+    setCurrentView(view);
+    setShowListings(showListingsValue);
+    window.history.pushState(
+      { view, showListings: showListingsValue }, 
+      '', 
+      ''
+    );
+  };
   
   const t = {
     de: {
@@ -672,10 +708,7 @@ export default function RoomatePlatform() {
       <div className="bg-gradient-to-r from-sky-400 to-blue-500 text-white p-4 sticky top-0 z-50 shadow-lg">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           {/* Logo Links */}
-          <div className="flex items-center space-x-2 sm:space-x-3 cursor-pointer" onClick={() => {
-            setCurrentView('home');
-            setShowListings(false);
-          }}>
+          <div className="flex items-center space-x-2 sm:space-x-3 cursor-pointer" onClick={() => navigateTo('home', false)}>
             <Home className="w-6 h-6 sm:w-8 sm:h-8" />
             <h1 className="text-xl sm:text-2xl font-bold">{t[language].logo}</h1>
           </div>
@@ -683,16 +716,13 @@ export default function RoomatePlatform() {
           {/* Navigation Rechts */}
           <div className="flex items-center space-x-3 sm:space-x-6">
             <button
-              onClick={() => {
-                setCurrentView('home');
-                setShowListings(false);
-              }}
+              onClick={() => navigateTo('home', false)}
               className="hidden sm:block hover:text-white/80 transition font-medium"
             >
               {t[language].home}
             </button>
             <button
-              onClick={() => setCurrentView('about')}
+              onClick={() => navigateTo('about')}
               className="hidden sm:block hover:text-white/80 transition font-medium"
             >
               {t[language].about}
@@ -738,7 +768,7 @@ export default function RoomatePlatform() {
 
               {/* Entdecke die Städte Button */}
               <button
-                onClick={() => setShowListings(true)}
+                onClick={() => navigateTo('home', true)}
                 className="bg-gradient-to-r from-sky-400 to-blue-500 text-white px-8 sm:px-12 py-4 sm:py-5 rounded-full text-lg sm:text-xl font-bold hover:shadow-2xl hover:scale-105 transition-all duration-300"
               >
                 {t[language].exploreCities}
@@ -1467,7 +1497,7 @@ export default function RoomatePlatform() {
               <h3 className="font-bold text-lg mb-4">{t[language].company}</h3>
               <ul className="space-y-2 text-gray-300">
                 <li>
-                  <button onClick={() => setCurrentView('about')} className="hover:text-white transition">
+                  <button onClick={() => navigateTo('about')} className="hover:text-white transition">
                     {t[language].aboutUs}
                   </button>
                 </li>
@@ -1479,17 +1509,17 @@ export default function RoomatePlatform() {
               <h3 className="font-bold text-lg mb-4">{t[language].legal}</h3>
               <ul className="space-y-2 text-gray-300">
                 <li>
-                  <button onClick={() => setCurrentView('imprint')} className="hover:text-white transition">
+                  <button onClick={() => navigateTo('imprint')} className="hover:text-white transition">
                     {t[language].imprint}
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => setCurrentView('privacy')} className="hover:text-white transition">
+                  <button onClick={() => navigateTo('privacy')} className="hover:text-white transition">
                     {t[language].privacy}
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => setCurrentView('terms')} className="hover:text-white transition">
+                  <button onClick={() => navigateTo('terms')} className="hover:text-white transition">
                     {t[language].terms}
                   </button>
                 </li>
@@ -1501,12 +1531,12 @@ export default function RoomatePlatform() {
               <h3 className="font-bold text-lg mb-4">{t[language].support}</h3>
               <ul className="space-y-2 text-gray-300">
                 <li>
-                  <button onClick={() => setCurrentView('contact')} className="hover:text-white transition">
+                  <button onClick={() => navigateTo('contact')} className="hover:text-white transition">
                     {t[language].contact}
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => setCurrentView('feedback')} className="hover:text-white transition">
+                  <button onClick={() => navigateTo('feedback')} className="hover:text-white transition">
                     {t[language].feedback}
                   </button>
                 </li>
@@ -2065,24 +2095,21 @@ export default function RoomatePlatform() {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
         <div className="max-w-6xl mx-auto flex justify-around items-center py-2 sm:py-3 px-2">
           <button
-            onClick={() => {
-              setCurrentView('home');
-              setShowListings(false);
-            }}
+            onClick={() => navigateTo('home', false)}
             className={`flex flex-col items-center space-y-0.5 sm:space-y-1 ${currentView === 'home' ? 'text-sky-500' : 'text-gray-400'} transition-colors`}
           >
             <Home className="w-5 h-5 sm:w-6 sm:h-6" />
             <span className="text-[10px] sm:text-xs">{t[language].home}</span>
           </button>
           <button
-            onClick={() => setCurrentView('favorites')}
+            onClick={() => navigateTo('favorites')}
             className={`flex flex-col items-center space-y-0.5 sm:space-y-1 ${currentView === 'favorites' ? 'text-sky-500' : 'text-gray-400'} transition-colors`}
           >
             <Heart className="w-5 h-5 sm:w-6 sm:h-6" />
             <span className="text-[10px] sm:text-xs">{t[language].favorites}</span>
           </button>
           <button
-            onClick={() => setCurrentView('profile')}
+            onClick={() => navigateTo('profile')}
             className={`flex flex-col items-center space-y-0.5 sm:space-y-1 ${currentView === 'profile' ? 'text-sky-500' : 'text-gray-400'} transition-colors`}
           >
             <User className="w-5 h-5 sm:w-6 sm:h-6" />
