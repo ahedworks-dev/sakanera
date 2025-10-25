@@ -1513,22 +1513,17 @@ export default function RoomatePlatform() {
               </ul>
             </div>
 
-            {/* Social Media / Logo */}
+            {/* Logo */}
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <Home className="w-8 h-8 text-sky-400" />
                 <span className="font-bold text-2xl">sakanera</span>
               </div>
-              <p className="text-gray-300 text-sm mb-4">
+              <p className="text-gray-300 text-sm">
                 {language === 'de' 
                   ? 'Die Plattform für Mitbewohner & WG-Zimmer'
                   : 'The platform for roommates & shared apartments'}
               </p>
-              <div className="flex space-x-4">
-                <button className="text-gray-300 hover:text-white transition text-2xl">📘</button>
-                <button className="text-gray-300 hover:text-white transition text-2xl">📷</button>
-                <button className="text-gray-300 hover:text-white transition text-2xl">🐦</button>
-              </div>
             </div>
           </div>
 
