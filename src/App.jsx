@@ -797,6 +797,23 @@ export default function RoomatePlatform() {
                     <Heart className="w-4 h-4" />
                     <span>{t[language].favorites}</span>
                   </button>
+                  
+                  {/* Trennlinie */}
+                  {userProfile && (
+                    <>
+                      <div className="border-t my-1"></div>
+                      <button
+                        onClick={() => {
+                          handleLogout()
+                          setShowProfileDropdown(false)
+                        }}
+                        className="w-full px-4 py-2 text-left hover:bg-red-50 flex items-center space-x-2 text-red-600"
+                      >
+                        <X className="w-4 h-4" />
+                        <span>{t[language].logout}</span>
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
