@@ -55,6 +55,7 @@ export default function RoomatePlatform() {
       search: 'Suchen',
       favorites: 'Favoriten',
       profile: 'Profil',
+      about: 'Über Uns',
       
       // Favorites
       myFavorites: 'Meine Favoriten',
@@ -223,6 +224,7 @@ export default function RoomatePlatform() {
       search: 'Search',
       favorites: 'Favorites',
       profile: 'Profile',
+      about: 'About Us',
       
       // Favorites
       myFavorites: 'My Favorites',
@@ -618,24 +620,38 @@ export default function RoomatePlatform() {
       {/* Header */}
       <div className="bg-gradient-to-r from-sky-400 to-blue-500 text-white p-4 sticky top-0 z-50 shadow-lg">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          {/* Logo Links */}
+          <div className="flex items-center space-x-2 sm:space-x-3 cursor-pointer" onClick={() => setCurrentView('home')}>
             <Home className="w-6 h-6 sm:w-8 sm:h-8" />
             <h1 className="text-xl sm:text-2xl font-bold">{t[language].logo}</h1>
           </div>
-          <div className="flex items-center space-x-2 sm:space-x-4">
+          
+          {/* Navigation Rechts */}
+          <div className="flex items-center space-x-3 sm:space-x-6">
+            <button
+              onClick={() => setCurrentView('home')}
+              className="hidden sm:block hover:text-white/80 transition font-medium"
+            >
+              {t[language].home}
+            </button>
+            <button
+              onClick={() => setCurrentView('about')}
+              className="hidden sm:block hover:text-white/80 transition font-medium"
+            >
+              {t[language].about}
+            </button>
+            <button
+              onClick={handlePostAdClick}
+              className="bg-white text-sky-500 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold hover:shadow-lg transition text-sm sm:text-base"
+            >
+              <span className="hidden sm:inline">{t[language].postAd}</span>
+              <span className="sm:hidden">+</span>
+            </button>
             <button
               onClick={() => setLanguage(language === 'de' ? 'en' : 'de')}
               className="px-2 py-1 sm:px-3 sm:py-1 bg-white/20 rounded-lg hover:bg-white/30 transition text-lg sm:text-xl"
             >
               {language === 'de' ? '🇩🇪' : '🇬🇧'}
-            </button>
-            <button
-              onClick={handlePostAdClick}
-              className="bg-white text-sky-500 px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-semibold hover:shadow-lg transition flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base"
-            >
-              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="hidden sm:inline">{t[language].postAd}</span>
-              <span className="sm:hidden">+</span>
             </button>
           </div>
         </div>
@@ -987,6 +1003,97 @@ export default function RoomatePlatform() {
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Über Uns Seite */}
+        {currentView === 'about' && (
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl font-bold mb-6 text-center">{t[language].about}</h2>
+            
+            <div className="bg-gradient-to-r from-sky-50 to-blue-50 rounded-lg p-6 sm:p-8 mb-6">
+              <div className="text-center mb-8">
+                <div className="text-6xl mb-4">🏠</div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                  {language === 'de' ? 'Willkommen bei sakanera!' : 'Welcome to sakanera!'}
+                </h3>
+                <p className="text-lg text-gray-700">
+                  {language === 'de' 
+                    ? 'Die Plattform für Mitbewohner & WG-Zimmer' 
+                    : 'The platform for roommates & shared apartments'}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-white border rounded-lg p-6 shadow-sm">
+                <h4 className="text-xl font-bold mb-3 text-sky-600">
+                  {language === 'de' ? '💡 Unsere Mission' : '💡 Our Mission'}
+                </h4>
+                <p className="text-gray-700 leading-relaxed">
+                  {language === 'de' 
+                    ? 'Wir helfen dir, die perfekte WG zu finden oder den idealen Mitbewohner für dein Zimmer zu suchen. Mit sakanera sparst du Geld und findest gleichzeitig tolle Menschen zum Zusammenleben.' 
+                    : 'We help you find the perfect shared apartment or the ideal roommate for your room. With sakanera, you save money while meeting great people to live with.'}
+                </p>
+              </div>
+
+              <div className="bg-white border rounded-lg p-6 shadow-sm">
+                <h4 className="text-xl font-bold mb-3 text-sky-600">
+                  {language === 'de' ? '🎯 Warum sakanera?' : '🎯 Why sakanera?'}
+                </h4>
+                <ul className="space-y-3 text-gray-700">
+                  <li className="flex items-start space-x-3">
+                    <span className="text-green-500 font-bold">✓</span>
+                    <span>{language === 'de' ? 'Einfach & schnell - Erstelle dein Inserat in wenigen Minuten' : 'Simple & fast - Create your listing in minutes'}</span>
+                  </li>
+                  <li className="flex items-start space-x-3">
+                    <span className="text-green-500 font-bold">✓</span>
+                    <span>{language === 'de' ? 'Sichere Bezahlung - Verschiedene Zahlungsmethoden verfügbar' : 'Secure payment - Various payment methods available'}</span>
+                  </li>
+                  <li className="flex items-start space-x-3">
+                    <span className="text-green-500 font-bold">✓</span>
+                    <span>{language === 'de' ? 'Flexible Laufzeiten - Von 1 bis 6 Monate, du entscheidest' : 'Flexible terms - From 1 to 6 months, you decide'}</span>
+                  </li>
+                  <li className="flex items-start space-x-3">
+                    <span className="text-green-500 font-bold">✓</span>
+                    <span>{language === 'de' ? 'Echte Profile - Alle Nutzer sind verifiziert' : 'Real profiles - All users are verified'}</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-white border rounded-lg p-6 shadow-sm">
+                <h4 className="text-xl font-bold mb-3 text-sky-600">
+                  {language === 'de' ? '📞 Kontakt' : '📞 Contact'}
+                </h4>
+                <p className="text-gray-700 mb-4">
+                  {language === 'de' 
+                    ? 'Hast du Fragen oder Anregungen? Wir sind für dich da!' 
+                    : 'Do you have questions or suggestions? We are here for you!'}
+                </p>
+                <div className="space-y-2 text-gray-700">
+                  <p>📧 <strong>Email:</strong> info@sakanera.com</p>
+                  <p>📱 <strong>{language === 'de' ? 'Telefon' : 'Phone'}:</strong> +49 123 456 789</p>
+                  <p>🌐 <strong>Website:</strong> www.sakanera.com</p>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-sky-400 to-blue-500 text-white rounded-lg p-6 text-center">
+                <h4 className="text-2xl font-bold mb-3">
+                  {language === 'de' ? '🚀 Bereit loszulegen?' : '🚀 Ready to start?'}
+                </h4>
+                <p className="mb-4">
+                  {language === 'de' 
+                    ? 'Erstelle jetzt dein Profil und finde deinen perfekten Mitbewohner!' 
+                    : 'Create your profile now and find your perfect roommate!'}
+                </p>
+                <button
+                  onClick={handlePostAdClick}
+                  className="bg-white text-sky-500 px-6 py-3 rounded-lg font-bold hover:shadow-lg transition"
+                >
+                  {t[language].postAd}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -1527,13 +1634,6 @@ export default function RoomatePlatform() {
           >
             <Home className="w-5 h-5 sm:w-6 sm:h-6" />
             <span className="text-[10px] sm:text-xs">{t[language].home}</span>
-          </button>
-          <button
-            onClick={() => setCurrentView('home')}
-            className={`flex flex-col items-center space-y-0.5 sm:space-y-1 ${currentView === 'home' ? 'text-sky-500' : 'text-gray-400'} transition-colors`}
-          >
-            <Search className="w-5 h-5 sm:w-6 sm:h-6" />
-            <span className="text-[10px] sm:text-xs">{t[language].search}</span>
           </button>
           <button
             onClick={() => setCurrentView('favorites')}
