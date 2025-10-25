@@ -1486,14 +1486,14 @@ export default function RoomatePlatform() {
               {/* Basic */}
               <div className="border-2 rounded-lg p-6 hover:border-sky-400 transition cursor-pointer">
                 <h3 className="text-xl font-bold mb-2">{t[language].basic}</h3>
-                <div className="text-3xl font-bold text-sky-500 mb-4">€9.99</div>
+                <div className="text-3xl font-bold text-sky-500 mb-4">€12.99</div>
                 <ul className="space-y-2 mb-6 text-sm">
                   <li>✓ 1 {t[language].monthRuntime}</li>
                   <li>✓ {t[language].adOnlineFor} 1 {t[language].monthOnline}</li>
                   <li>✓ {t[language].unlimitedContact}</li>
                 </ul>
                 <button
-                  onClick={() => handleSubscriptionSelect({ name: 'basic', price: 9.99, duration: 1 })}
+                  onClick={() => handleSubscriptionSelect({ name: 'basic', price: 12.99, duration: 1 })}
                   className="w-full bg-sky-400 text-white py-2 rounded-lg hover:bg-sky-500 transition"
                 >
                   {t[language].chooseAbo}
@@ -1506,8 +1506,8 @@ export default function RoomatePlatform() {
                   {t[language].popular}
                 </div>
                 <h3 className="text-xl font-bold mb-2">{t[language].standard}</h3>
-                <div className="text-3xl font-bold text-sky-500 mb-1">€24.99</div>
-                <div className="text-sm text-gray-500 mb-4">17% {t[language].cheaper}</div>
+                <div className="text-3xl font-bold text-sky-500 mb-1">€26.99</div>
+                <div className="text-sm text-gray-500 mb-4">31% {t[language].cheaper}</div>
                 <ul className="space-y-2 mb-6 text-sm">
                   <li>✓ 3 {t[language].monthsRuntime}</li>
                   <li>✓ {t[language].adOnlineFor} 3 {t[language].monthsOnline}</li>
@@ -1515,7 +1515,7 @@ export default function RoomatePlatform() {
                   <li>✓ {t[language].fullVisibility}</li>
                 </ul>
                 <button
-                  onClick={() => handleSubscriptionSelect({ name: 'standard', price: 24.99, duration: 3 })}
+                  onClick={() => handleSubscriptionSelect({ name: 'standard', price: 26.99, duration: 3 })}
                   className="w-full bg-sky-500 text-white py-2 rounded-lg hover:bg-sky-600 transition"
                 >
                   {t[language].chooseAbo}
@@ -1525,8 +1525,8 @@ export default function RoomatePlatform() {
               {/* Premium */}
               <div className="border-2 rounded-lg p-6 hover:border-sky-400 transition cursor-pointer">
                 <h3 className="text-xl font-bold mb-2">{t[language].premium}</h3>
-                <div className="text-3xl font-bold text-sky-500 mb-1">€44.99</div>
-                <div className="text-sm text-gray-500 mb-4">25% {t[language].cheaper}</div>
+                <div className="text-3xl font-bold text-sky-500 mb-1">€47.99</div>
+                <div className="text-sm text-gray-500 mb-4">38% {t[language].cheaper}</div>
                 <ul className="space-y-2 mb-6 text-sm">
                   <li>✓ 6 {t[language].monthsRuntime}</li>
                   <li>✓ {t[language].adOnlineFor} 6 {t[language].monthsOnline}</li>
@@ -1535,7 +1535,7 @@ export default function RoomatePlatform() {
                   <li>✓ {t[language].bestValue}</li>
                 </ul>
                 <button
-                  onClick={() => handleSubscriptionSelect({ name: 'premium', price: 44.99, duration: 6 })}
+                  onClick={() => handleSubscriptionSelect({ name: 'premium', price: 47.99, duration: 6 })}
                   className="w-full bg-sky-400 text-white py-2 rounded-lg hover:bg-sky-500 transition"
                 >
                   {t[language].chooseAbo}
