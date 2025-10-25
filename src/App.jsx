@@ -76,6 +76,14 @@ export default function RoomatePlatform() {
       saveProfile: 'Profil speichern',
       updateProfile: 'Profil aktualisieren',
       createProfileInfo: 'Erstelle dein Profil um Inserate zu veröffentlichen',
+      logout: 'Abmelden',
+      login: 'Anmelden',
+      loggedInAs: 'Angemeldet als',
+      notLoggedIn: 'Nicht angemeldet',
+      pleaseLogin: 'Bitte melde dich an um diese Funktion zu nutzen',
+      loggedOut: 'Erfolgreich abgemeldet',
+      myListings: 'Meine Inserate',
+      noMyListings: 'Du hast noch keine Inserate erstellt',
       
       // Subscription
       chooseSubscription: 'Wähle dein Abo',
@@ -152,6 +160,8 @@ export default function RoomatePlatform() {
       confirmDelete: 'Bestätige, dass ein Suchender dich kontaktiert hat und ihr euch geeinigt habt.',
       deleteInfo: 'Das Inserat wird nach Bestätigung permanent gelöscht',
       yesConfirm: 'Ja, bestätigen',
+      markAsCompleted: 'Als erledigt markieren',
+      listingCompleted: 'Inserat erfolgreich als erledigt markiert!',
       
       // Contact Modal
       contactDetails: 'Kontaktdaten',
@@ -234,6 +244,14 @@ export default function RoomatePlatform() {
       saveProfile: 'Save Profile',
       updateProfile: 'Update Profile',
       createProfileInfo: 'Create your profile to post listings',
+      logout: 'Logout',
+      login: 'Login',
+      loggedInAs: 'Logged in as',
+      notLoggedIn: 'Not logged in',
+      pleaseLogin: 'Please login to use this feature',
+      loggedOut: 'Successfully logged out',
+      myListings: 'My Listings',
+      noMyListings: 'You have not created any listings yet',
       
       // Subscription
       chooseSubscription: 'Choose Your Plan',
@@ -310,6 +328,8 @@ export default function RoomatePlatform() {
       confirmDelete: 'Confirm that a seeker has contacted you and you have agreed.',
       deleteInfo: 'The listing will be permanently deleted after confirmation',
       yesConfirm: 'Yes, confirm',
+      markAsCompleted: 'Mark as Completed',
+      listingCompleted: 'Listing successfully marked as completed!',
       
       // Contact Modal
       contactDetails: 'Contact Details',
@@ -466,6 +486,8 @@ export default function RoomatePlatform() {
   };
 
   const handleSubmitListing = () => {
+    // Validierung: Nur die Felder prüfen die der User ausfüllen muss
+    // contactName, contactEmail, contactPhone kommen automatisch vom Profil
     if (!formData.title || !formData.city || !formData.rent || !formData.moveInDate || 
         !formData.age || !formData.occupation || !formData.description) {
       alert(t[language].fillAllFields);
@@ -526,6 +548,22 @@ export default function RoomatePlatform() {
 
     setUserProfile(profileData);
     alert(t[language].profileSaved);
+    // Nach Profil speichern direkt zur Abo-Auswahl
+    setShowSubscription(true);
+  };
+
+  const handleLogout = () => {
+    setUserProfile(null);
+    setProfileData({
+      image: null,
+      name: '',
+      email: '',
+      phone: '',
+      age: '',
+      occupation: ''
+    });
+    alert(t[language].loggedOut);
+    setCurrentView('home');
   };
 
   const toggleFavorite = (listingId) => {
@@ -545,7 +583,7 @@ export default function RoomatePlatform() {
     setListings(listings.filter(l => l.id !== deleteListingId));
     setShowDeleteConfirm(false);
     setDeleteListingId(null);
-    alert(t[language].listingDeleted);
+    alert(t[language].listingCompleted);
   };
 
   const handleContactClick = (listing) => {
@@ -750,9 +788,9 @@ export default function RoomatePlatform() {
                       {userProfile && listing.contactEmail === userProfile.email && (
                         <button
                           onClick={() => handleDeleteClick(listing.id)}
-                          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                          className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition font-semibold text-sm"
                         >
-                          <X className="w-5 h-5" />
+                          ✓ {t[language].markAsCompleted}
                         </button>
                       )}
                     </div>
@@ -811,7 +849,25 @@ export default function RoomatePlatform() {
 
         {currentView === 'profile' && (
           <div className="max-w-2xl mx-auto">
-            <h2 className="text-2xl font-bold mb-6">{userProfile ? t[language].yourProfile : t[language].createProfile}</h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">{userProfile ? t[language].yourProfile : t[language].createProfile}</h2>
+              {userProfile && (
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition font-semibold"
+                >
+                  {t[language].logout}
+                </button>
+              )}
+            </div>
+            
+            {userProfile && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                <p className="text-green-800">
+                  <span className="font-semibold">✓ {t[language].loggedInAs}:</span> {userProfile.name} ({userProfile.email})
+                </p>
+              </div>
+            )}
             
             {!userProfile && (
               <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 mb-6">
@@ -899,6 +955,38 @@ export default function RoomatePlatform() {
                 {userProfile ? t[language].updateProfile : t[language].saveProfile}
               </button>
             </div>
+
+            {/* Meine Inserate Sektion */}
+            {userProfile && (
+              <div className="mt-8">
+                <h3 className="text-xl font-bold mb-4">{t[language].myListings}</h3>
+                {listings.filter(l => l.contactEmail === userProfile.email).length === 0 ? (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg">
+                    <p className="text-gray-500">{t[language].noMyListings}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {listings.filter(l => l.contactEmail === userProfile.email).map(listing => (
+                      <div key={listing.id} className="border rounded-lg p-4 bg-white shadow-sm">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="font-bold text-lg">{listing.title}</h4>
+                            <p className="text-sm text-gray-600">{listing.city} • €{listing.rent}/Monat</p>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteClick(listing.id)}
+                            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition text-sm font-semibold"
+                          >
+                            ✓ {t[language].markAsCompleted}
+                          </button>
+                        </div>
+                        <p className="text-sm text-gray-700">{listing.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
