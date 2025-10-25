@@ -144,6 +144,8 @@ export default function RoomatePlatform() {
       uploadImage: 'Profilbild hochladen',
       imageUploaded: 'Bild hochgeladen',
       name: 'Name',
+      firstName: 'Vorname',
+      lastName: 'Nachname',
       email: 'E-Mail',
       phone: 'Telefon',
       age: 'Alter',
@@ -338,6 +340,8 @@ export default function RoomatePlatform() {
       uploadImage: 'Upload Profile Picture',
       imageUploaded: 'Image uploaded',
       name: 'Name',
+      firstName: 'First Name',
+      lastName: 'Last Name',
       email: 'Email',
       phone: 'Phone',
       age: 'Age',
@@ -490,6 +494,8 @@ export default function RoomatePlatform() {
 
   const [profileData, setProfileData] = useState({
     image: null,
+    firstName: '',
+    lastName: '',
     name: '',
     email: '',
     phone: '',
@@ -642,13 +648,19 @@ export default function RoomatePlatform() {
   };
 
   const handleSaveProfile = () => {
-    if (!profileData.name || !profileData.email || !profileData.phone || 
+    if (!profileData.firstName || !profileData.lastName || !profileData.email || !profileData.phone || 
         !profileData.age || !profileData.occupation) {
       alert(t[language].fillAllFields);
       return;
     }
 
-    setUserProfile(profileData);
+    // Kombiniere Vor- und Nachname zu name
+    const fullProfile = {
+      ...profileData,
+      name: `${profileData.firstName} ${profileData.lastName}`
+    };
+
+    setUserProfile(fullProfile);
     alert(t[language].profileSaved);
     // Nach Profil speichern direkt zur Abo-Auswahl
     setShowSubscription(true);
@@ -658,6 +670,8 @@ export default function RoomatePlatform() {
     setUserProfile(null);
     setProfileData({
       image: null,
+      firstName: '',
+      lastName: '',
       name: '',
       email: '',
       phone: '',
@@ -755,7 +769,9 @@ export default function RoomatePlatform() {
                 className="flex items-center space-x-2 hover:text-white/80 transition"
               >
                 <User className="w-5 h-5 sm:w-6 sm:h-6" />
-                <span className="hidden sm:inline">{t[language].profile}</span>
+                <span className="hidden sm:inline">
+                  {userProfile ? userProfile.firstName || userProfile.name.split(' ')[0] : t[language].profile}
+                </span>
               </button>
               
               {/* Dropdown Menu */}
@@ -1077,12 +1093,24 @@ export default function RoomatePlatform() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">{t[language].name} *</label>
+                <label className="block text-sm font-medium mb-1">{t[language].firstName} *</label>
                 <input
                   type="text"
-                  value={profileData.name}
-                  onChange={(e) => setProfileData({...profileData, name: e.target.value})}
+                  value={profileData.firstName}
+                  onChange={(e) => setProfileData({...profileData, firstName: e.target.value})}
                   className="w-full px-4 py-2 border rounded-lg"
+                  placeholder={language === 'de' ? 'Max' : 'John'}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">{t[language].lastName} *</label>
+                <input
+                  type="text"
+                  value={profileData.lastName}
+                  onChange={(e) => setProfileData({...profileData, lastName: e.target.value})}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  placeholder={language === 'de' ? 'Mustermann' : 'Doe'}
                 />
               </div>
 
