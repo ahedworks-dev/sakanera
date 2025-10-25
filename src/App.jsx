@@ -8,6 +8,7 @@ export default function RoomatePlatform() {
   const [userProfile, setUserProfile] = useState(null);
   const [language, setLanguage] = useState('de');
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Browser History Navigation
   useEffect(() => {
@@ -787,6 +788,21 @@ export default function RoomatePlatform() {
                     <User className="w-4 h-4" />
                     <span>{t[language].profile}</span>
                   </button>
+                  
+                  {/* Login Button - nur wenn nicht eingeloggt */}
+                  {!userProfile && (
+                    <button
+                      onClick={() => {
+                        setShowLoginModal(true)
+                        setShowProfileDropdown(false)
+                      }}
+                      className="w-full px-4 py-2 text-left hover:bg-sky-50 flex items-center space-x-2 text-sky-600"
+                    >
+                      <User className="w-4 h-4" />
+                      <span>{t[language].login}</span>
+                    </button>
+                  )}
+                  
                   <button
                     onClick={() => {
                       navigateTo('favorites')
@@ -798,7 +814,7 @@ export default function RoomatePlatform() {
                     <span>{t[language].favorites}</span>
                   </button>
                   
-                  {/* Trennlinie */}
+                  {/* Trennlinie + Abmelden - nur wenn eingeloggt */}
                   {userProfile && (
                     <>
                       <div className="border-t my-1"></div>
@@ -1659,6 +1675,91 @@ export default function RoomatePlatform() {
           </div>
         </div>
       </footer>
+
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">{t[language].login}</h2>
+              <button onClick={() => setShowLoginModal(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="mb-6 bg-sky-50 border border-sky-200 rounded-lg p-4">
+              <p className="text-sky-800 text-sm">
+                {language === 'de' 
+                  ? '🔐 Melde dich mit deinen Zugangsdaten an, um fortzufahren.' 
+                  : '🔐 Sign in with your credentials to continue.'}
+              </p>
+            </div>
+
+            <form className="space-y-4" onSubmit={(e) => {
+              e.preventDefault();
+              const email = e.target.email.value;
+              const password = e.target.password.value;
+              
+              // Einfacher Login-Check (später durch echte Auth ersetzen)
+              if (userProfile && userProfile.email === email) {
+                alert(language === 'de' ? '✅ Erfolgreich eingeloggt!' : '✅ Successfully logged in!');
+                setShowLoginModal(false);
+              } else {
+                alert(language === 'de' 
+                  ? '❌ Login fehlgeschlagen. Email oder Passwort falsch.' 
+                  : '❌ Login failed. Email or password incorrect.');
+              }
+            }}>
+              <div>
+                <label className="block text-sm font-medium mb-1">{t[language].email} *</label>
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400"
+                  placeholder="max@example.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  {language === 'de' ? 'Passwort' : 'Password'} *
+                </label>
+                <input
+                  type="password"
+                  name="password"
+                  required
+                  minLength={6}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400"
+                  placeholder="••••••"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-gradient-to-r from-sky-400 to-blue-500 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition"
+              >
+                {t[language].login}
+              </button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                {language === 'de' ? 'Noch kein Account?' : "Don't have an account?"}{' '}
+                <button
+                  onClick={() => {
+                    setShowLoginModal(false);
+                    navigateTo('profile');
+                  }}
+                  className="text-sky-600 hover:underline font-medium"
+                >
+                  {language === 'de' ? 'Jetzt registrieren' : 'Sign up now'}
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Subscription Modal */}
       {showSubscription && (
