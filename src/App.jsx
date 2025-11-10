@@ -148,6 +148,10 @@ export default function RoomatePlatform() {
       firstName: 'Vorname',
       lastName: 'Nachname',
       email: 'E-Mail',
+      password: 'Passwort',
+      confirmPassword: 'Passwort bestätigen',
+      passwordMismatch: 'Passwörter stimmen nicht überein',
+      passwordMinLength: 'Passwort muss mindestens 6 Zeichen lang sein',
       phone: 'Telefon',
       age: 'Alter',
       occupation: 'Beruf/Status',
@@ -344,6 +348,10 @@ export default function RoomatePlatform() {
       firstName: 'First Name',
       lastName: 'Last Name',
       email: 'Email',
+      password: 'Password',
+      confirmPassword: 'Confirm Password',
+      passwordMismatch: 'Passwords do not match',
+      passwordMinLength: 'Password must be at least 6 characters long',
       phone: 'Phone',
       age: 'Age',
       occupation: 'Occupation/Status',
@@ -499,6 +507,8 @@ export default function RoomatePlatform() {
     lastName: '',
     name: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     phone: '',
     age: '',
     occupation: ''
@@ -649,9 +659,22 @@ export default function RoomatePlatform() {
   };
 
   const handleSaveProfile = () => {
-    if (!profileData.firstName || !profileData.lastName || !profileData.email || !profileData.phone || 
+    if (!profileData.firstName || !profileData.lastName || !profileData.email || 
+        !profileData.password || !profileData.confirmPassword || !profileData.phone || 
         !profileData.age || !profileData.occupation) {
       alert(t[language].fillAllFields);
+      return;
+    }
+
+    // Passwort-Länge prüfen
+    if (profileData.password.length < 6) {
+      alert(t[language].passwordMinLength);
+      return;
+    }
+
+    // Passwörter müssen übereinstimmen
+    if (profileData.password !== profileData.confirmPassword) {
+      alert(t[language].passwordMismatch);
       return;
     }
 
@@ -675,6 +698,8 @@ export default function RoomatePlatform() {
       lastName: '',
       name: '',
       email: '',
+      password: '',
+      confirmPassword: '',
       phone: '',
       age: '',
       occupation: ''
@@ -1155,6 +1180,45 @@ export default function RoomatePlatform() {
                   onChange={(e) => setProfileData({...profileData, email: e.target.value})}
                   className="w-full px-4 py-2 border rounded-lg"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">{t[language].password} *</label>
+                <input
+                  type="password"
+                  value={profileData.password}
+                  onChange={(e) => setProfileData({...profileData, password: e.target.value})}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  minLength={6}
+                  placeholder="••••••"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {t[language].passwordMinLength}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">{t[language].confirmPassword} *</label>
+                <input
+                  type="password"
+                  value={profileData.confirmPassword}
+                  onChange={(e) => setProfileData({...profileData, confirmPassword: e.target.value})}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  minLength={6}
+                  placeholder="••••••"
+                />
+                {profileData.password && profileData.confirmPassword && 
+                 profileData.password !== profileData.confirmPassword && (
+                  <p className="text-xs text-red-600 mt-1">
+                    ❌ {t[language].passwordMismatch}
+                  </p>
+                )}
+                {profileData.password && profileData.confirmPassword && 
+                 profileData.password === profileData.confirmPassword && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ {language === 'de' ? 'Passwörter stimmen überein' : 'Passwords match'}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -1700,8 +1764,8 @@ export default function RoomatePlatform() {
               const email = e.target.email.value;
               const password = e.target.password.value;
               
-              // Einfacher Login-Check (später durch echte Auth ersetzen)
-              if (userProfile && userProfile.email === email) {
+              // Login-Check mit Email und Passwort
+              if (userProfile && userProfile.email === email && userProfile.password === password) {
                 alert(language === 'de' ? '✅ Erfolgreich eingeloggt!' : '✅ Successfully logged in!');
                 setShowLoginModal(false);
               } else {
