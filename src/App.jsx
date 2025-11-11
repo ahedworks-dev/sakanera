@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Home, Users, Search, Plus, MapPin, DollarSign, Calendar, User, Heart, X, MessageCircle, Filter, Globe, ChevronDown } from 'lucide-react';
-import { supabase, authHelpers, profileHelpers, listingHelpers, favoriteHelpers, storageHelpers } from './supabaseClient';
+import { Home, Users, Search, Plus, MapPin, DollarSign, Calendar, User, Heart, X, MessageCircle, Filter, Globe, ChevronDown, Mail, Lock, Phone, Briefcase, Send, ArrowLeft } from 'lucide-react';
+import { supabase, authHelpers, profileHelpers, listingHelpers, favoriteHelpers } from './supabaseClient';
 
 export default function RoomatePlatform() {
   // State Management
@@ -13,6 +13,7 @@ export default function RoomatePlatform() {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showListings, setShowListings] = useState(false);
   const [showAddListing, setShowAddListing] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
@@ -20,7 +21,37 @@ export default function RoomatePlatform() {
   const [selectedContact, setSelectedContact] = useState(null);
   const [listingToDelete, setListingToDelete] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showFeedback, setShowFeedback] = useState(false);
+  const [isLoginMode, setIsLoginMode] = useState(true);
+  
+  // Contact Form State
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
+  const [contactSuccess, setContactSuccess] = useState(false);
+  
+  // Form States
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [registerForm, setRegisterForm] = useState({
+    firstName: '', lastName: '', email: '', password: '', confirmPassword: '', phone: '', age: '', occupation: ''
+  });
+  const [listingForm, setListingForm] = useState({
+    type: 'room',
+    title: '',
+    description: '',
+    city: 'Aachen',
+    rent: '',
+    squareMeters: '',
+    roomCount: '',
+    availableFrom: '',
+    age: '',
+    gender: 'all',
+    occupation: '',
+    smoking: 'no',
+    cleanliness: 'normal',
+    amenities: ''
+  });
   
   // Filter State
   const [filters, setFilters] = useState({
@@ -29,15 +60,14 @@ export default function RoomatePlatform() {
     maxRent: 'all',
     gender: 'all'
   });
+  const [showFilters, setShowFilters] = useState(false);
 
-  // Auth State Management - Supabase Integration
+  // Auth State Management
   useEffect(() => {
-    // Check initial auth state
     const initAuth = async () => {
       const currentUser = await authHelpers.getCurrentUser();
       if (currentUser) {
         setUser(currentUser);
-        // Load profile
         const { data: profileData } = await profileHelpers.getProfile(currentUser.id);
         if (profileData) {
           setUserProfile(profileData);
@@ -48,7 +78,6 @@ export default function RoomatePlatform() {
 
     initAuth();
 
-    // Subscribe to auth changes
     const { data: { subscription } } = authHelpers.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setUser(session.user);
@@ -65,12 +94,12 @@ export default function RoomatePlatform() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Load Listings from Supabase
+  // Load Listings
   useEffect(() => {
     loadListings();
   }, [filters]);
 
-  // Load Favorites when user changes
+  // Load Favorites
   useEffect(() => {
     if (user) {
       loadFavorites();
@@ -82,7 +111,6 @@ export default function RoomatePlatform() {
   const loadListings = async () => {
     setLoading(true);
     const { data, error } = await listingHelpers.getAllListings(filters);
-    
     if (error) {
       console.error('Fehler beim Laden der Listings:', error);
     } else {
@@ -93,35 +121,13 @@ export default function RoomatePlatform() {
 
   const loadFavorites = async () => {
     if (!user) return;
-    
     const { data, error } = await favoriteHelpers.getUserFavorites(user.id);
-    
     if (error) {
       console.error('Fehler beim Laden der Favoriten:', error);
     } else {
       setFavorites(data?.map(f => f.listing) || []);
     }
   };
-
-  // Browser History Navigation
-  useEffect(() => {
-    window.history.replaceState({ view: 'home', showListings: false }, '', '');
-
-    const handlePopState = (event) => {
-      if (event.state) {
-        setCurrentView(event.state.view);
-        if (event.state.showListings !== undefined) {
-          setShowListings(event.state.showListings);
-        }
-        if (event.state.view === 'home' && !event.state.showListings) {
-          setShowAddListing(false);
-        }
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -138,27 +144,19 @@ export default function RoomatePlatform() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showProfileDropdown, showLanguageDropdown]);
 
-  const navigateTo = (view, showListingsValue = false) => {
-    setCurrentView(view);
-    setShowListings(showListingsValue);
-    window.history.pushState({ view, showListings: showListingsValue }, '', '');
-  };
-
-  // Translations with English support
+  // Translations
   const t = {
     de: {
-      // Header
       logo: 'sakanera',
       postAd: 'Inserieren',
       language: 'Sprache',
-      
-      // Hero
       heroTitle: 'Zahle die Hälfte der Miete',
       heroSubtitle: 'Spare Geld & finde coole Mitbewohner',
       heroDescription: 'Teile deine Wohnung, teile dein Leben',
       exploreCities: 'Entdecke die Städte',
-      
-      // Filter
+      backButton: '← Zurück',
+      citiesPageTitle: 'Wähle deine Stadt',
+      accountSettings: 'Account Einstellungen',
       filter: 'Filter',
       allCities: 'Alle Städte',
       maxRent: 'Max. Miete',
@@ -171,8 +169,6 @@ export default function RoomatePlatform() {
       searchRoommate: 'Mitbewohner suchen',
       reset: 'Zurücksetzen',
       apply: 'Anwenden',
-      
-      // Listing
       perMonth: '/ Monat',
       from: 'ab',
       years: 'Jahre',
@@ -184,27 +180,19 @@ export default function RoomatePlatform() {
       availableFrom: 'Verfügbar ab',
       squareMeters: 'm²',
       rooms: 'Zimmer',
-      
-      // Smoking
       nonSmoker: 'Nichtraucher',
       balcony: 'Balkon',
       smoker: 'Raucher',
       smoking: 'Rauchen',
-      
-      // Cleanliness
       veryClean: 'Sehr ordentlich',
       normal: 'Normal',
       relaxed: 'Entspannt',
       cleanliness: 'Ordnung',
-      
-      // Navigation
       home: 'Home',
       search: 'Suchen',
       favorites: 'Favoriten',
       profile: 'Profil',
       about: 'Über Uns',
-      
-      // Footer
       company: 'Unternehmen',
       legal: 'Rechtliches',
       support: 'Support',
@@ -217,33 +205,16 @@ export default function RoomatePlatform() {
       aboutUs: 'Über uns',
       careers: 'Karriere',
       press: 'Presse',
-      copyright: '© 2024 sakanera. Alle Rechte vorbehalten.',
+      copyright: '© 2025 sakanera. Alle Rechte vorbehalten.',
       address: 'An der Haupttribüne 1, 52070 Aachen',
-      feedback: 'Feedback senden',
-      feedbackTitle: 'Dein Feedback',
-      feedbackDesc: 'Wir freuen uns über dein Feedback! Teile uns deine Meinung, Vorschläge oder Probleme mit.',
-      yourName: 'Dein Name',
-      yourEmail: 'Deine E-Mail',
-      message: 'Nachricht',
-      messagePlaceholder: 'Schreibe uns deine Nachricht...',
-      submit: 'Absenden',
-      feedbackSuccess: 'Vielen Dank für dein Feedback!',
       close: 'Schließen',
       cancel: 'Abbrechen',
-      
-      // Favorites
       myFavorites: 'Meine Favoriten',
       noFavorites: 'Noch keine Favoriten vorhanden',
       noFavoritesDesc: 'Speichere Inserate als Favoriten, um sie später wieder zu finden.',
-      
-      // Profile
       yourProfile: 'Dein Profil',
       createProfile: 'Profil erstellen',
       manageInfo: 'Verwalte deine Informationen',
-      createProfileDesc: 'Erstelle dein Profil um Inserate zu erstellen',
-      profileImage: 'Profilbild',
-      uploadImage: 'Bild hochladen',
-      imageUploaded: 'Bild hochgeladen',
       name: 'Name',
       firstName: 'Vorname',
       lastName: 'Nachname',
@@ -257,20 +228,16 @@ export default function RoomatePlatform() {
       occupation: 'Beruf/Status',
       saveProfile: 'Profil speichern',
       updateProfile: 'Profil aktualisieren',
-      createProfileInfo: 'Erstelle dein Profil um Inserate zu veröffentlichen',
       logout: 'Abmelden',
       login: 'Anmelden',
       register: 'Registrieren',
       loggedInAs: 'Angemeldet als',
       notLoggedIn: 'Nicht angemeldet',
       pleaseLogin: 'Bitte melde dich an um diese Funktion zu nutzen',
-      loggedOut: 'Erfolgreich abgemeldet',
       myListings: 'Meine Inserate',
       noMyListings: 'Du hast noch keine Inserate erstellt',
       noListingsYet: 'Noch keine Inserate vorhanden',
       beFirstToPost: 'Sei der Erste und erstelle ein Inserat!',
-      
-      // Create Listing
       createListing: 'Inserat erstellen',
       listingType: 'Art des Inserats',
       title: 'Titel',
@@ -287,59 +254,41 @@ export default function RoomatePlatform() {
       contactData: 'Kontaktdaten',
       contactFromProfile: 'Diese Daten werden aus deinem Profil übernommen',
       post: 'Inserieren',
-      
-      // Subscription
-      chooseSubscription: 'Wähle dein Abo',
-      subscriptionDesc: 'Inseriere dein Angebot und finde den perfekten Mitbewohner',
-      basic: 'Basis',
-      standard: 'Standard',
-      premium: 'Premium',
-      popular: 'BELIEBT',
-      monthRuntime: 'Monat Laufzeit',
-      monthsRuntime: 'Monate Laufzeit',
-      adOnlineFor: 'Inserat für',
-      monthOnline: 'Monat online',
-      monthsOnline: 'Monate online',
-      unlimitedContact: 'Unbegrenzte Kontaktanfragen',
-      fullVisibility: 'Volle Sichtbarkeit',
-      cheaper: 'günstiger',
-      bestValue: 'Beste Preis-Leistung',
-      tip: 'Tipp:',
-      longerCheaper: 'Je länger die Laufzeit, desto günstiger der Preis pro Monat!',
-      continueToPayment: 'Weiter zur Zahlung',
-      chooseAbo: 'Abo wählen',
-      back: 'Zurück',
-      
-      // Delete confirmation
       roommateFound: 'Mitbewohner gefunden!',
       confirmDelete: 'Möchtest du dein Inserat löschen?',
       deleteInfo: 'Dein Inserat wird dauerhaft entfernt.',
       yesConfirm: 'Ja, löschen',
-      
-      // Loading & Errors
       loading: 'Laden...',
       error: 'Fehler',
-      success: 'Erfolg',
       loginSuccess: 'Erfolgreich angemeldet!',
-      logoutSuccess: 'Erfolgreich abgemeldet!',
       registrationSuccess: 'Registrierung erfolgreich!',
-      profileUpdated: 'Profil aktualisiert!',
       listingCreated: 'Inserat erstellt!',
       listingDeleted: 'Inserat gelöscht!',
+      alreadyHaveAccount: 'Bereits registriert?',
+      noAccountYet: 'Noch kein Account?',
+      clickHere: 'Hier klicken',
+      contactPageTitle: 'Kontaktiere uns',
+      contactPageSubtitle: 'Wir freuen uns von dir zu hören!',
+      yourName: 'Dein Name',
+      yourEmail: 'Deine E-Mail',
+      yourMessage: 'Deine Nachricht',
+      messagePlaceholder: 'Schreib uns deine Nachricht...',
+      send: 'Absenden',
+      messageSent: 'Nachricht gesendet! Wir melden uns bald bei dir.',
+      ourAddress: 'Unsere Adresse',
+      writeUs: 'Schreib uns',
     },
     en: {
-      // Header
       logo: 'sakanera',
       postAd: 'Post Ad',
       language: 'Language',
-      
-      // Hero
       heroTitle: 'Pay Half the Rent',
       heroSubtitle: 'Save Money & Find Cool Roommates',
       heroDescription: 'Share your apartment, share your life',
       exploreCities: 'Explore Cities',
-      
-      // Filter
+      backButton: '← Back',
+      citiesPageTitle: 'Choose your city',
+      accountSettings: 'Account Settings',
       filter: 'Filter',
       allCities: 'All Cities',
       maxRent: 'Max. Rent',
@@ -352,8 +301,6 @@ export default function RoomatePlatform() {
       searchRoommate: 'Search Roommate',
       reset: 'Reset',
       apply: 'Apply',
-      
-      // Listing
       perMonth: '/ Month',
       from: 'from',
       years: 'Years',
@@ -365,27 +312,19 @@ export default function RoomatePlatform() {
       availableFrom: 'Available from',
       squareMeters: 'sqm',
       rooms: 'Rooms',
-      
-      // Smoking
       nonSmoker: 'Non-Smoker',
       balcony: 'Balcony',
       smoker: 'Smoker',
       smoking: 'Smoking',
-      
-      // Cleanliness
       veryClean: 'Very Clean',
       normal: 'Normal',
       relaxed: 'Relaxed',
       cleanliness: 'Cleanliness',
-      
-      // Navigation
       home: 'Home',
       search: 'Search',
       favorites: 'Favorites',
       profile: 'Profile',
       about: 'About Us',
-      
-      // Footer
       company: 'Company',
       legal: 'Legal',
       support: 'Support',
@@ -398,33 +337,16 @@ export default function RoomatePlatform() {
       aboutUs: 'About us',
       careers: 'Careers',
       press: 'Press',
-      copyright: '© 2024 sakanera. All rights reserved.',
+      copyright: '© 2025 sakanera. All rights reserved.',
       address: 'An der Haupttribüne 1, 52070 Aachen',
-      feedback: 'Send Feedback',
-      feedbackTitle: 'Your Feedback',
-      feedbackDesc: 'We appreciate your feedback! Share your opinion, suggestions or problems with us.',
-      yourName: 'Your Name',
-      yourEmail: 'Your Email',
-      message: 'Message',
-      messagePlaceholder: 'Write your message...',
-      submit: 'Submit',
-      feedbackSuccess: 'Thank you for your feedback!',
       close: 'Close',
       cancel: 'Cancel',
-      
-      // Favorites
       myFavorites: 'My Favorites',
       noFavorites: 'No favorites yet',
       noFavoritesDesc: 'Save listings as favorites to find them later.',
-      
-      // Profile
       yourProfile: 'Your Profile',
       createProfile: 'Create Profile',
       manageInfo: 'Manage your information',
-      createProfileDesc: 'Create your profile to post listings',
-      profileImage: 'Profile Picture',
-      uploadImage: 'Upload Picture',
-      imageUploaded: 'Picture uploaded',
       name: 'Name',
       firstName: 'First Name',
       lastName: 'Last Name',
@@ -438,20 +360,16 @@ export default function RoomatePlatform() {
       occupation: 'Occupation/Status',
       saveProfile: 'Save Profile',
       updateProfile: 'Update Profile',
-      createProfileInfo: 'Create your profile to post listings',
       logout: 'Logout',
       login: 'Login',
       register: 'Register',
       loggedInAs: 'Logged in as',
       notLoggedIn: 'Not logged in',
       pleaseLogin: 'Please login to use this feature',
-      loggedOut: 'Successfully logged out',
       myListings: 'My Listings',
       noMyListings: 'You have no listings yet',
       noListingsYet: 'No listings yet',
       beFirstToPost: 'Be the first to create a listing!',
-      
-      // Create Listing
       createListing: 'Create Listing',
       listingType: 'Listing Type',
       title: 'Title',
@@ -468,73 +386,67 @@ export default function RoomatePlatform() {
       contactData: 'Contact Data',
       contactFromProfile: 'This data is taken from your profile',
       post: 'Post',
-      
-      // Subscription
-      chooseSubscription: 'Choose Your Plan',
-      subscriptionDesc: 'Post your offer and find the perfect roommate',
-      basic: 'Basic',
-      standard: 'Standard',
-      premium: 'Premium',
-      popular: 'POPULAR',
-      monthRuntime: 'Month Runtime',
-      monthsRuntime: 'Months Runtime',
-      adOnlineFor: 'Ad online for',
-      monthOnline: 'Month online',
-      monthsOnline: 'Months online',
-      unlimitedContact: 'Unlimited contact requests',
-      fullVisibility: 'Full visibility',
-      cheaper: 'cheaper',
-      bestValue: 'Best value',
-      tip: 'Tip:',
-      longerCheaper: 'The longer the runtime, the cheaper the price per month!',
-      continueToPayment: 'Continue to payment',
-      chooseAbo: 'Choose Plan',
-      back: 'Back',
-      
-      // Delete confirmation
       roommateFound: 'Roommate Found!',
       confirmDelete: 'Do you want to delete your listing?',
       deleteInfo: 'Your listing will be permanently removed.',
       yesConfirm: 'Yes, delete',
-      
-      // Loading & Errors
       loading: 'Loading...',
       error: 'Error',
-      success: 'Success',
       loginSuccess: 'Successfully logged in!',
-      logoutSuccess: 'Successfully logged out!',
       registrationSuccess: 'Registration successful!',
-      profileUpdated: 'Profile updated!',
       listingCreated: 'Listing created!',
       listingDeleted: 'Listing deleted!',
+      alreadyHaveAccount: 'Already registered?',
+      noAccountYet: 'No account yet?',
+      clickHere: 'Click here',
+      contactPageTitle: 'Contact Us',
+      contactPageSubtitle: 'We would love to hear from you!',
+      yourName: 'Your Name',
+      yourEmail: 'Your Email',
+      yourMessage: 'Your Message',
+      messagePlaceholder: 'Write your message...',
+      send: 'Send',
+      messageSent: 'Message sent! We will get back to you soon.',
+      ourAddress: 'Our Address',
+      writeUs: 'Write to us',
     }
   };
 
-  // Auth Functions with Supabase
-  const handleRegister = async (formData) => {
+  // Auth Functions
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    
+    if (registerForm.password !== registerForm.confirmPassword) {
+      alert(t[language].passwordMismatch);
+      return;
+    }
+    
+    if (registerForm.password.length < 6) {
+      alert(t[language].passwordMinLength);
+      return;
+    }
+
     try {
-      // Register user
       const { data: authData, error: authError } = await authHelpers.signUp(
-        formData.email,
-        formData.password,
+        registerForm.email,
+        registerForm.password,
         {
-          firstName: formData.firstName,
-          lastName: formData.lastName
+          firstName: registerForm.firstName,
+          lastName: registerForm.lastName
         }
       );
 
       if (authError) throw authError;
 
-      // Create profile
       const { data: profileData, error: profileError } = await profileHelpers.createProfile(
         authData.user.id,
         {
-          email: formData.email,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          phone: formData.phone || '',
-          age: formData.age ? parseInt(formData.age) : null,
-          occupation: formData.occupation || ''
+          email: registerForm.email,
+          first_name: registerForm.firstName,
+          last_name: registerForm.lastName,
+          phone: registerForm.phone || '',
+          age: registerForm.age ? parseInt(registerForm.age) : null,
+          occupation: registerForm.occupation || ''
         }
       );
 
@@ -542,20 +454,25 @@ export default function RoomatePlatform() {
 
       setUserProfile(profileData);
       alert(t[language].registrationSuccess);
-      setShowLoginModal(false);
+      setShowRegisterModal(false);
+      setRegisterForm({
+        firstName: '', lastName: '', email: '', password: '', confirmPassword: '', phone: '', age: '', occupation: ''
+      });
     } catch (error) {
       alert(`${t[language].error}: ${error.message}`);
     }
   };
 
-  const handleLogin = async (email, password) => {
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    
     try {
-      const { data, error } = await authHelpers.signIn(email, password);
-      
+      const { data, error } = await authHelpers.signIn(loginForm.email, loginForm.password);
       if (error) throw error;
 
       alert(t[language].loginSuccess);
       setShowLoginModal(false);
+      setLoginForm({ email: '', password: '' });
     } catch (error) {
       alert(`${t[language].error}: ${error.message}`);
     }
@@ -567,13 +484,15 @@ export default function RoomatePlatform() {
       setUserProfile(null);
       setUser(null);
       setCurrentView('home');
-      alert(t[language].logoutSuccess);
+      setShowListings(false);
     } catch (error) {
       alert(`${t[language].error}: ${error.message}`);
     }
   };
 
-  const handleSubmitListing = async (formData) => {
+  const handleSubmitListing = async (e) => {
+    e.preventDefault();
+    
     if (!user || !userProfile) {
       alert(t[language].pleaseLogin);
       return;
@@ -582,20 +501,20 @@ export default function RoomatePlatform() {
     try {
       const listingData = {
         user_id: user.id,
-        type: formData.type,
-        title: formData.title,
-        description: formData.description,
-        city: formData.city,
-        rent: parseFloat(formData.rent),
-        square_meters: formData.squareMeters ? parseInt(formData.squareMeters) : null,
-        room_count: formData.roomCount ? parseInt(formData.roomCount) : null,
-        available_from: formData.availableFrom || null,
-        age: formData.age ? parseInt(formData.age) : null,
-        gender: formData.gender || 'all',
-        occupation: formData.occupation || '',
-        smoking: formData.smoking,
-        cleanliness: formData.cleanliness,
-        amenities: formData.amenities || '',
+        type: listingForm.type,
+        title: listingForm.title,
+        description: listingForm.description,
+        city: listingForm.city,
+        rent: parseFloat(listingForm.rent),
+        square_meters: listingForm.squareMeters ? parseInt(listingForm.squareMeters) : null,
+        room_count: listingForm.roomCount ? parseInt(listingForm.roomCount) : null,
+        available_from: listingForm.availableFrom || null,
+        age: listingForm.age ? parseInt(listingForm.age) : null,
+        gender: listingForm.gender || 'all',
+        occupation: listingForm.occupation || '',
+        smoking: listingForm.smoking,
+        cleanliness: listingForm.cleanliness,
+        amenities: listingForm.amenities || '',
         contact_name: `${userProfile.first_name} ${userProfile.last_name}`,
         contact_email: userProfile.email,
         contact_phone: userProfile.phone || '',
@@ -604,11 +523,26 @@ export default function RoomatePlatform() {
       };
 
       const { data, error } = await listingHelpers.createListing(listingData);
-      
       if (error) throw error;
 
       alert(t[language].listingCreated);
       setShowAddListing(false);
+      setListingForm({
+        type: 'room',
+        title: '',
+        description: '',
+        city: 'Aachen',
+        rent: '',
+        squareMeters: '',
+        roomCount: '',
+        availableFrom: '',
+        age: '',
+        gender: 'all',
+        occupation: '',
+        smoking: 'no',
+        cleanliness: 'normal',
+        amenities: ''
+      });
       loadListings();
       setCurrentView('search');
     } catch (error) {
@@ -616,17 +550,11 @@ export default function RoomatePlatform() {
     }
   };
 
-  const handleDeleteListing = (listing) => {
-    setListingToDelete(listing);
-    setShowDeleteConfirm(true);
-  };
-
   const handleConfirmDelete = async () => {
     if (!listingToDelete) return;
 
     try {
       const { error } = await listingHelpers.deleteListing(listingToDelete.id);
-      
       if (error) throw error;
 
       alert(t[language].listingDeleted);
@@ -659,15 +587,23 @@ export default function RoomatePlatform() {
     }
   };
 
-  // Language switcher component
+  const handleContactSubmit = (e) => {
+    e.preventDefault();
+    console.log('Contact form submitted:', contactForm);
+    setContactSuccess(true);
+    setContactForm({ name: '', email: '', message: '' });
+    setTimeout(() => setContactSuccess(false), 5000);
+  };
+
+  // Language Switcher Component
   const LanguageSwitcher = () => (
     <div className="language-dropdown-container relative">
       <button
         onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-        className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-sky-400 transition"
+        className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-sky-400 transition rounded-lg hover:bg-gray-50"
       >
         <Globe className="w-5 h-5" />
-        <span className="hidden md:inline">{language.toUpperCase()}</span>
+        <span className="hidden md:inline font-medium">{language.toUpperCase()}</span>
         <ChevronDown className="w-4 h-4" />
       </button>
 
@@ -678,30 +614,45 @@ export default function RoomatePlatform() {
               setLanguage('de');
               setShowLanguageDropdown(false);
             }}
-            className={`w-full px-4 py-2 text-left hover:bg-sky-50 transition ${
+            className={`w-full px-4 py-2 text-left hover:bg-sky-50 transition flex items-center gap-2 ${
               language === 'de' ? 'bg-sky-100 text-sky-600 font-semibold' : 'text-gray-700'
             }`}
           >
-            🇩🇪 Deutsch
+            <span className="text-xl">🇩🇪</span>
+            <span>Deutsch</span>
           </button>
           <button
             onClick={() => {
               setLanguage('en');
               setShowLanguageDropdown(false);
             }}
-            className={`w-full px-4 py-2 text-left hover:bg-sky-50 transition ${
+            className={`w-full px-4 py-2 text-left hover:bg-sky-50 transition flex items-center gap-2 ${
               language === 'en' ? 'bg-sky-100 text-sky-600 font-semibold' : 'text-gray-700'
             }`}
           >
-            🇬🇧 English
+            <span className="text-xl">🇬🇧</span>
+            <span>English</span>
           </button>
         </div>
       )}
     </div>
   );
 
-  // Rest of the component continues...
-  // (Due to file size, I'll create this in multiple parts)
+  // Back Button Component  
+  const BackButton = () => {
+    const mainViews = ['home', 'search', 'favorites', 'profile', 'contact'];
+    if (mainViews.includes(currentView)) return null;
+    
+    return (
+      <button
+        onClick={() => setCurrentView('home')}
+        className="mb-6 flex items-center gap-2 text-sky-400 hover:text-sky-500 transition font-medium text-lg"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        {t[language].backButton}
+      </button>
+    );
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -710,34 +661,39 @@ export default function RoomatePlatform() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-8">
-              <h1 
-                onClick={() => navigateTo('home')}
-                className="text-2xl font-bold text-sky-400 cursor-pointer"
+              <button 
+                onClick={() => {
+                  setCurrentView('home');
+                  setShowListings(false);
+                }}
+                className="flex items-center gap-2 group"
               >
-                {t[language].logo}
-              </h1>
+                <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-blue-500 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition">
+                  <Home className="w-6 h-6 text-white" />
+                </div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-sky-400 to-blue-500 bg-clip-text text-transparent">
+                  {t[language].logo}
+                </h1>
+              </button>
             </div>
 
             <div className="flex items-center gap-4">
-              {/* Language Switcher */}
               <LanguageSwitcher />
 
-              {/* Post Ad Button */}
               {userProfile && (
                 <button 
                   onClick={() => setShowAddListing(true)}
-                  className="hidden md:flex items-center gap-2 bg-sky-400 text-white px-6 py-2 rounded-lg hover:bg-sky-500 transition"
+                  className="hidden md:flex items-center gap-2 bg-sky-400 text-white px-6 py-2 rounded-lg hover:bg-sky-500 transition shadow-md hover:shadow-lg"
                 >
                   <Plus className="w-5 h-5" />
                   {t[language].postAd}
                 </button>
               )}
 
-              {/* Profile Menu */}
               <div className="profile-dropdown-container relative">
                 <button
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                  className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-sky-400 transition"
+                  className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-sky-400 transition rounded-lg hover:bg-gray-50"
                 >
                   <User className="w-5 h-5" />
                   <ChevronDown className="w-4 h-4" />
@@ -756,8 +712,9 @@ export default function RoomatePlatform() {
                             setCurrentView('profile');
                             setShowProfileDropdown(false);
                           }}
-                          className="w-full px-4 py-2 text-left hover:bg-sky-50 transition"
+                          className="w-full px-4 py-2 text-left hover:bg-sky-50 transition flex items-center gap-2"
                         >
+                          <User className="w-4 h-4" />
                           {t[language].profile}
                         </button>
                         <button
@@ -765,21 +722,37 @@ export default function RoomatePlatform() {
                             handleLogout();
                             setShowProfileDropdown(false);
                           }}
-                          className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 transition"
+                          className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 transition flex items-center gap-2"
                         >
+                          <X className="w-4 h-4" />
                           {t[language].logout}
                         </button>
                       </>
                     ) : (
-                      <button
-                        onClick={() => {
-                          setShowLoginModal(true);
-                          setShowProfileDropdown(false);
-                        }}
-                        className="w-full px-4 py-2 text-left hover:bg-sky-50 transition"
-                      >
-                        {t[language].login}
-                      </button>
+                      <>
+                        <button
+                          onClick={() => {
+                            setIsLoginMode(true);
+                            setShowLoginModal(true);
+                            setShowProfileDropdown(false);
+                          }}
+                          className="w-full px-4 py-2 text-left hover:bg-sky-50 transition flex items-center gap-2"
+                        >
+                          <User className="w-4 h-4" />
+                          {t[language].login}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsLoginMode(false);
+                            setShowRegisterModal(true);
+                            setShowProfileDropdown(false);
+                          }}
+                          className="w-full px-4 py-2 text-left hover:bg-sky-50 transition flex items-center gap-2"
+                        >
+                          <Plus className="w-4 h-4" />
+                          {t[language].register}
+                        </button>
+                      </>
                     )}
                   </div>
                 )}
@@ -789,14 +762,17 @@ export default function RoomatePlatform() {
         </div>
       </header>
 
-      {/* Main Content - I'll create remaining sections in next files */}
+      {/* Main Content */}
       <main className="flex-1">
         {currentView === 'home' && !showListings && (
           <div className="relative">
             {/* Hero Section */}
             <div className="relative bg-gradient-to-br from-sky-400 to-blue-500 text-white py-20">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <h2 className="text-5xl md:text-6xl font-bold mb-6">
+                <h1 className="text-7xl md:text-8xl font-bold mb-8 animate-fade-in tracking-tight">
+                  sakanera
+                </h1>
+                <h2 className="text-5xl md:text-6xl font-bold mb-6 animate-fade-in">
                   {t[language].heroTitle}
                 </h2>
                 <p className="text-2xl md:text-3xl mb-4 opacity-90">
@@ -806,43 +782,117 @@ export default function RoomatePlatform() {
                   {t[language].heroDescription}
                 </p>
                 <button
-                  onClick={() => {
-                    setShowListings(true);
-                    navigateTo('home', true);
-                  }}
+                  onClick={() => setCurrentView('cities')}
                   className="bg-white text-sky-400 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition transform hover:scale-105 shadow-xl"
                 >
                   {t[language].exploreCities}
                 </button>
               </div>
             </div>
+          </div>
+        )}
 
-            {/* Cities Grid */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {['Berlin', 'München', 'Hamburg', 'Köln', 'Frankfurt', 'Stuttgart', 'Düsseldorf', 'Leipzig'].map((city) => (
-                  <button
-                    key={city}
-                    onClick={() => {
-                      setFilters({ ...filters, city });
-                      setShowListings(true);
-                      navigateTo('home', true);
-                    }}
-                    className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition transform hover:scale-105 text-center"
-                  >
-                    <div className="text-4xl mb-3">🏙️</div>
-                    <h3 className="font-semibold text-lg">{city}</h3>
-                  </button>
-                ))}
-              </div>
+        {/* CITIES VIEW */}
+        {currentView === 'cities' && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <BackButton />
+            <h2 className="text-4xl font-bold mb-12 text-center">{t[language].citiesPageTitle}</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {['Berlin', 'München', 'Hamburg', 'Köln', 'Frankfurt', 'Stuttgart', 'Düsseldorf', 'Aachen'].map((city) => (
+                <button
+                  key={city}
+                  onClick={() => {
+                    setFilters({ ...filters, city });
+                    setCurrentView('search');
+                  }}
+                  className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition transform hover:scale-105 text-center"
+                >
+                  <div className="text-4xl mb-3">🏙️</div>
+                  <h3 className="font-semibold text-lg">{city}</h3>
+                </button>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Listings View - Placeholder for now */}
-        {(currentView === 'home' && showListings) || currentView === 'search' ? (
+        {currentView === 'search' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <h2 className="text-3xl font-bold mb-6">{t[language].allListings}</h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-3xl font-bold">{t[language].allListings}</h2>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-md hover:shadow-lg transition"
+              >
+                <Filter className="w-5 h-5" />
+                {t[language].filter}
+              </button>
+            </div>
+
+            {showFilters && (
+              <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">{t[language].city}</label>
+                    <select
+                      value={filters.city}
+                      onChange={(e) => setFilters({ ...filters, city: e.target.value })}
+                      className="w-full px-4 py-2 border rounded-lg"
+                    >
+                      <option value="all">{t[language].allCities}</option>
+                      <option value="Aachen">Aachen</option>
+                      <option value="Berlin">Berlin</option>
+                      <option value="München">München</option>
+                      <option value="Hamburg">Hamburg</option>
+                      <option value="Köln">Köln</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">{t[language].listingType}</label>
+                    <select
+                      value={filters.type}
+                      onChange={(e) => setFilters({ ...filters, type: e.target.value })}
+                      className="w-full px-4 py-2 border rounded-lg"
+                    >
+                      <option value="all">{t[language].all}</option>
+                      <option value="room">{t[language].room}</option>
+                      <option value="roommate">{t[language].roommate}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">{t[language].maxRent}</label>
+                    <select
+                      value={filters.maxRent}
+                      onChange={(e) => setFilters({ ...filters, maxRent: e.target.value })}
+                      className="w-full px-4 py-2 border rounded-lg"
+                    >
+                      <option value="all">{t[language].all}</option>
+                      <option value="400">400€</option>
+                      <option value="500">500€</option>
+                      <option value="600">600€</option>
+                      <option value="800">800€</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">{t[language].gender}</label>
+                    <select
+                      value={filters.gender}
+                      onChange={(e) => setFilters({ ...filters, gender: e.target.value })}
+                      className="w-full px-4 py-2 border rounded-lg"
+                    >
+                      <option value="all">{t[language].all}</option>
+                      <option value="male">{t[language].male}</option>
+                      <option value="female">{t[language].female}</option>
+                    </select>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setFilters({ city: 'all', type: 'all', maxRent: 'all', gender: 'all' })}
+                  className="mt-4 text-sky-400 hover:text-sky-500 font-medium"
+                >
+                  {t[language].reset}
+                </button>
+              </div>
+            )}
             
             {loading ? (
               <div className="text-center py-20">
@@ -861,7 +911,12 @@ export default function RoomatePlatform() {
                   <div key={listing.id} className="bg-white rounded-lg shadow-md hover:shadow-xl transition">
                     <div className="p-6">
                       <div className="flex justify-between items-start mb-4">
-                        <h3 className="text-xl font-semibold">{listing.title}</h3>
+                        <div className="flex-1">
+                          <span className="inline-block px-3 py-1 bg-sky-100 text-sky-600 rounded-full text-xs font-medium mb-2">
+                            {listing.type === 'room' ? t[language].room : t[language].roommate}
+                          </span>
+                          <h3 className="text-xl font-semibold">{listing.title}</h3>
+                        </div>
                         <button
                           onClick={() => handleToggleFavorite(listing)}
                           className={`p-2 rounded-full transition ${
@@ -876,15 +931,21 @@ export default function RoomatePlatform() {
                       <p className="text-gray-600 mb-4 line-clamp-2">{listing.description}</p>
                       <div className="space-y-2 text-sm text-gray-600">
                         <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4" />
+                          <MapPin className="w-4 h-4 text-sky-400" />
                           <span>{listing.city}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <DollarSign className="w-4 h-4" />
+                          <DollarSign className="w-4 h-4 text-sky-400" />
                           <span className="font-semibold text-lg text-sky-400">
                             {listing.rent}€ {t[language].perMonth}
                           </span>
                         </div>
+                        {listing.square_meters && (
+                          <div className="flex items-center gap-2">
+                            <Home className="w-4 h-4 text-sky-400" />
+                            <span>{listing.square_meters} {t[language].squareMeters}</span>
+                          </div>
+                        )}
                       </div>
                       <button
                         onClick={() => {
@@ -901,9 +962,8 @@ export default function RoomatePlatform() {
               </div>
             )}
           </div>
-        ) : null}
+        )}
 
-        {/* Other views: favorites, profile, about */}
         {currentView === 'favorites' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <h2 className="text-3xl font-bold mb-6">{t[language].myFavorites}</h2>
@@ -918,9 +978,9 @@ export default function RoomatePlatform() {
                 {favorites.map((listing) => (
                   <div key={listing.id} className="bg-white rounded-lg shadow-md p-6">
                     <h3 className="text-xl font-semibold mb-2">{listing.title}</h3>
-                    <p className="text-gray-600 mb-4">{listing.description}</p>
+                    <p className="text-gray-600 mb-4 line-clamp-2">{listing.description}</p>
                     <div className="flex justify-between items-center">
-                      <span className="text-sky-400 font-semibold">{listing.rent}€/Monat</span>
+                      <span className="text-sky-400 font-semibold">{listing.rent}€ {t[language].perMonth}</span>
                       <button
                         onClick={() => handleToggleFavorite(listing)}
                         className="text-red-500"
@@ -936,42 +996,385 @@ export default function RoomatePlatform() {
         )}
 
         {currentView === 'profile' && (
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <h2 className="text-3xl font-bold mb-6">{t[language].yourProfile}</h2>
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {userProfile ? (
-              <div className="bg-white rounded-lg shadow-md p-8">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">{t[language].firstName}</label>
-                    <p className="text-lg">{userProfile.first_name}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">{t[language].lastName}</label>
-                    <p className="text-lg">{userProfile.last_name}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">{t[language].email}</label>
-                    <p className="text-lg">{userProfile.email}</p>
-                  </div>
-                  {userProfile.phone && (
-                    <div>
-                      <label className="block text-sm font-medium mb-1">{t[language].phone}</label>
-                      <p className="text-lg">{userProfile.phone}</p>
+              <>
+                {/* Header mit Name und Avatar */}
+                <div className="bg-gradient-to-r from-sky-400 to-blue-500 rounded-lg shadow-lg p-8 mb-8 text-white">
+                  <div className="flex items-center gap-6">
+                    <div className="w-24 h-24 bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-4xl font-bold">
+                      {userProfile.first_name?.[0]}{userProfile.last_name?.[0]}
                     </div>
-                  )}
+                    <div>
+                      <h1 className="text-4xl font-bold mb-2">
+                        {userProfile.first_name} {userProfile.last_name}
+                      </h1>
+                      <p className="text-white/90 text-lg">{userProfile.email}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
+
+                {/* Account Settings */}
+                <div className="bg-white rounded-lg shadow-md p-8 mb-6">
+                  <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                    <User className="w-6 h-6 text-sky-400" />
+                    {t[language].accountSettings}
+                  </h2>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="border-l-4 border-sky-400 pl-4">
+                      <label className="block text-sm font-medium text-gray-500 mb-1">{t[language].firstName}</label>
+                      <p className="text-lg font-semibold">{userProfile.first_name}</p>
+                    </div>
+                    <div className="border-l-4 border-sky-400 pl-4">
+                      <label className="block text-sm font-medium text-gray-500 mb-1">{t[language].lastName}</label>
+                      <p className="text-lg font-semibold">{userProfile.last_name}</p>
+                    </div>
+                    <div className="border-l-4 border-sky-400 pl-4">
+                      <label className="block text-sm font-medium text-gray-500 mb-1">{t[language].email}</label>
+                      <p className="text-lg font-semibold">{userProfile.email}</p>
+                    </div>
+                    {userProfile.phone && (
+                      <div className="border-l-4 border-sky-400 pl-4">
+                        <label className="block text-sm font-medium text-gray-500 mb-1">{t[language].phone}</label>
+                        <p className="text-lg font-semibold">{userProfile.phone}</p>
+                      </div>
+                    )}
+                    {userProfile.age && (
+                      <div className="border-l-4 border-sky-400 pl-4">
+                        <label className="block text-sm font-medium text-gray-500 mb-1">{t[language].age}</label>
+                        <p className="text-lg font-semibold">{userProfile.age} {t[language].years}</p>
+                      </div>
+                    )}
+                    {userProfile.occupation && (
+                      <div className="border-l-4 border-sky-400 pl-4">
+                        <label className="block text-sm font-medium text-gray-500 mb-1">{t[language].occupation}</label>
+                        <p className="text-lg font-semibold">{userProfile.occupation}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Meine Inserate Section */}
+                <div className="bg-white rounded-lg shadow-md p-8">
+                  <h2 className="text-2xl font-bold mb-6">{t[language].myListings}</h2>
+                  <p className="text-gray-600 mb-4">{t[language].noMyListings}</p>
+                  <button
+                    onClick={() => setShowAddListing(true)}
+                    className="bg-sky-400 text-white px-6 py-3 rounded-lg hover:bg-sky-500 transition flex items-center gap-2 shadow-md hover:shadow-lg"
+                  >
+                    <Plus className="w-5 h-5" />
+                    {t[language].createListing}
+                  </button>
+                </div>
+              </>
             ) : (
               <div className="text-center py-12">
-                <p className="text-gray-600 mb-4">{t[language].pleaseLogin}</p>
+                <User className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <h2 className="text-2xl font-bold mb-4">{t[language].yourProfile}</h2>
+                <p className="text-gray-600 mb-6">{t[language].pleaseLogin}</p>
                 <button
-                  onClick={() => setShowLoginModal(true)}
-                  className="bg-sky-400 text-white px-6 py-3 rounded-lg hover:bg-sky-500 transition"
+                  onClick={() => {
+                    setIsLoginMode(true);
+                    setShowLoginModal(true);
+                  }}
+                  className="bg-sky-400 text-white px-6 py-3 rounded-lg hover:bg-sky-500 transition shadow-md hover:shadow-lg"
                 >
                   {t[language].login}
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* CONTACT VIEW */}
+        {currentView === 'contact' && (
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold mb-4">{t[language].contactPageTitle}</h2>
+              <p className="text-xl text-gray-600">{t[language].contactPageSubtitle}</p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* Contact Form */}
+              <div className="bg-white rounded-lg shadow-md p-8">
+                <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                  <Mail className="w-6 h-6 text-sky-400" />
+                  {t[language].writeUs}
+                </h3>
+                
+                {contactSuccess && (
+                  <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
+                    ✅ {t[language].messageSent}
+                  </div>
+                )}
+
+                <form onSubmit={handleContactSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">{t[language].yourName}</label>
+                    <input
+                      type="text"
+                      required
+                      value={contactForm.name}
+                      onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
+                      className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-transparent"
+                      placeholder="Max Mustermann"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">{t[language].yourEmail}</label>
+                    <input
+                      type="email"
+                      required
+                      value={contactForm.email}
+                      onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                      className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-transparent"
+                      placeholder="email@beispiel.de"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">{t[language].yourMessage}</label>
+                    <textarea
+                      required
+                      value={contactForm.message}
+                      onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                      className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-transparent"
+                      rows="5"
+                      placeholder={t[language].messagePlaceholder}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-sky-400 text-white py-3 rounded-lg hover:bg-sky-500 transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                  >
+                    <Send className="w-5 h-5" />
+                    {t[language].send}
+                  </button>
+                </form>
+              </div>
+
+              {/* Contact Info - ADRESSE NUR HIER! */}
+              <div className="space-y-6">
+                <div className="bg-gradient-to-br from-sky-400 to-blue-500 text-white rounded-lg shadow-md p-8">
+                  <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                    <MapPin className="w-6 h-6" />
+                    {t[language].ourAddress}
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <Home className="w-6 h-6 flex-shrink-0 mt-1" />
+                      <div>
+                        <p className="font-semibold text-lg mb-1">sakanera</p>
+                        <p className="text-white/90">{t[language].address}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-6 h-6 flex-shrink-0" />
+                      <a href="mailto:info@sakanera.com" className="text-white/90 hover:text-white transition">
+                        info@sakanera.com
+                      </a>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Phone className="w-6 h-6 flex-shrink-0" />
+                      <a href="tel:+4924112345678" className="text-white/90 hover:text-white transition">
+                        +49 241 123 456 78
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Map Placeholder */}
+                <div className="bg-gray-200 rounded-lg shadow-md h-64 flex items-center justify-center">
+                  <div className="text-center text-gray-500">
+                    <MapPin className="w-12 h-12 mx-auto mb-2" />
+                    <p>An der Haupttribüne 1</p>
+                    <p>52070 Aachen</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ABOUT VIEW */}
+        {currentView === 'about' && (
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <BackButton />
+            <h2 className="text-4xl font-bold mb-8 text-center">{t[language].aboutUs}</h2>
+            <div className="bg-white rounded-lg shadow-md p-8 space-y-6">
+              <p className="text-lg text-gray-700">
+                {language === 'de' 
+                  ? 'Willkommen bei sakanera - Deiner Plattform für Mitbewohner-Suche! Wir helfen Dir, die perfekte WG zu finden und dabei Geld zu sparen.'
+                  : 'Welcome to sakanera - Your platform for finding roommates! We help you find the perfect shared apartment and save money.'}
+              </p>
+              <p className="text-gray-600">
+                {language === 'de'
+                  ? 'Unser Ziel ist es, das Zusammenleben einfacher und bezahlbarer zu machen.'
+                  : 'Our goal is to make shared living easier and more affordable.'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* CAREERS VIEW */}
+        {currentView === 'careers' && (
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <BackButton />
+            <h2 className="text-4xl font-bold mb-8 text-center">{t[language].careers}</h2>
+            <div className="bg-white rounded-lg shadow-md p-8 space-y-6">
+              <p className="text-lg text-gray-700">
+                {language === 'de'
+                  ? 'Werde Teil unseres Teams! Wir suchen motivierte Menschen, die unsere Mission teilen.'
+                  : 'Join our team! We are looking for motivated people who share our mission.'}
+              </p>
+              <p className="text-gray-600">
+                {language === 'de'
+                  ? 'Aktuelle Stellenangebote werden bald hier veröffentlicht.'
+                  : 'Current job openings will be posted here soon.'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* PRESS VIEW */}
+        {currentView === 'press' && (
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <BackButton />
+            <h2 className="text-4xl font-bold mb-8 text-center">{t[language].press}</h2>
+            <div className="bg-white rounded-lg shadow-md p-8 space-y-6">
+              <p className="text-lg text-gray-700">
+                {language === 'de'
+                  ? 'Presseanfragen und Medieninformationen'
+                  : 'Press inquiries and media information'}
+              </p>
+              <p className="text-gray-600">
+                {language === 'de'
+                  ? 'Für Presseanfragen kontaktieren Sie uns bitte über unser Kontaktformular.'
+                  : 'For press inquiries, please contact us via our contact form.'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* FAQ VIEW */}
+        {currentView === 'faq' && (
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <BackButton />
+            <h2 className="text-4xl font-bold mb-8 text-center">{t[language].faq}</h2>
+            <div className="bg-white rounded-lg shadow-md p-8 space-y-6">
+              <div>
+                <h3 className="text-xl font-semibold mb-2">
+                  {language === 'de' ? 'Wie funktioniert sakanera?' : 'How does sakanera work?'}
+                </h3>
+                <p className="text-gray-600">
+                  {language === 'de'
+                    ? 'Erstelle ein Profil, durchsuche Inserate und finde deinen perfekten Mitbewohner!'
+                    : 'Create a profile, browse listings and find your perfect roommate!'}
+                </p>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-2">
+                  {language === 'de' ? 'Ist die Nutzung kostenlos?' : 'Is it free to use?'}
+                </h3>
+                <p className="text-gray-600">
+                  {language === 'de'
+                    ? 'Ja, die Basis-Nutzung ist komplett kostenlos!'
+                    : 'Yes, basic usage is completely free!'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* HELP VIEW */}
+        {currentView === 'help' && (
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <BackButton />
+            <h2 className="text-4xl font-bold mb-8 text-center">{t[language].help}</h2>
+            <div className="bg-white rounded-lg shadow-md p-8 space-y-6">
+              <p className="text-lg text-gray-700">
+                {language === 'de'
+                  ? 'Brauchst Du Hilfe? Wir sind für Dich da!'
+                  : 'Need help? We are here for you!'}
+              </p>
+              <p className="text-gray-600">
+                {language === 'de'
+                  ? 'Besuche unsere FAQ-Seite oder kontaktiere uns direkt.'
+                  : 'Visit our FAQ page or contact us directly.'}
+              </p>
+              <button
+                onClick={() => setCurrentView('contact')}
+                className="bg-sky-400 text-white px-6 py-3 rounded-lg hover:bg-sky-500 transition"
+              >
+                {t[language].contact}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* IMPRINT VIEW */}
+        {currentView === 'imprint' && (
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <BackButton />
+            <h2 className="text-4xl font-bold mb-8 text-center">{t[language].imprint}</h2>
+            <div className="bg-white rounded-lg shadow-md p-8 space-y-4">
+              <h3 className="text-xl font-semibold">
+                {language === 'de' ? 'Angaben gemäß § 5 TMG' : 'Information according to § 5 TMG'}
+              </h3>
+              <div className="text-gray-700 space-y-2">
+                <p><strong>sakanera</strong></p>
+                <p>An der Haupttribüne 1</p>
+                <p>52070 Aachen, Deutschland</p>
+                <p className="mt-4"><strong>Kontakt:</strong></p>
+                <p>Email: info@sakanera.com</p>
+                <p>Telefon: +49 241 123 456 78</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PRIVACY VIEW */}
+        {currentView === 'privacy' && (
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <BackButton />
+            <h2 className="text-4xl font-bold mb-8 text-center">{t[language].privacy}</h2>
+            <div className="bg-white rounded-lg shadow-md p-8 space-y-6">
+              <h3 className="text-xl font-semibold">
+                {language === 'de' ? 'Datenschutzerklärung' : 'Privacy Policy'}
+              </h3>
+              <p className="text-gray-700">
+                {language === 'de'
+                  ? 'Wir nehmen den Schutz Ihrer persönlichen Daten sehr ernst. Diese Datenschutzerklärung informiert Sie über die Verarbeitung Ihrer Daten auf unserer Website.'
+                  : 'We take the protection of your personal data very seriously. This privacy policy informs you about the processing of your data on our website.'}
+              </p>
+              <p className="text-gray-600">
+                {language === 'de'
+                  ? 'Detaillierte Informationen werden in Kürze ergänzt.'
+                  : 'Detailed information will be added soon.'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* TERMS VIEW */}
+        {currentView === 'terms' && (
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <BackButton />
+            <h2 className="text-4xl font-bold mb-8 text-center">{t[language].terms}</h2>
+            <div className="bg-white rounded-lg shadow-md p-8 space-y-6">
+              <h3 className="text-xl font-semibold">
+                {language === 'de' ? 'Allgemeine Geschäftsbedingungen' : 'Terms and Conditions'}
+              </h3>
+              <p className="text-gray-700">
+                {language === 'de'
+                  ? 'Willkommen bei sakanera. Durch die Nutzung unserer Plattform akzeptieren Sie diese Nutzungsbedingungen.'
+                  : 'Welcome to sakanera. By using our platform, you accept these terms of use.'}
+              </p>
+              <p className="text-gray-600">
+                {language === 'de'
+                  ? 'Die vollständigen AGB werden in Kürze veröffentlicht.'
+                  : 'The complete terms and conditions will be published soon.'}
+              </p>
+            </div>
           </div>
         )}
       </main>
@@ -981,31 +1384,99 @@ export default function RoomatePlatform() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
-              <h3 className="text-xl font-bold mb-4">{t[language].logo}</h3>
-              <p className="text-gray-400 text-sm">{t[language].address}</p>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 bg-gradient-to-br from-sky-400 to-blue-500 rounded-lg flex items-center justify-center">
+                  <Home className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-xl font-bold">{t[language].logo}</h3>
+              </div>
+              <p className="text-gray-400 text-sm">{t[language].heroDescription}</p>
             </div>
             <div>
               <h4 className="font-semibold mb-4">{t[language].company}</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><button className="hover:text-white transition">{t[language].aboutUs}</button></li>
-                <li><button className="hover:text-white transition">{t[language].careers}</button></li>
-                <li><button className="hover:text-white transition">{t[language].press}</button></li>
+                <li>
+                  <button 
+                    onClick={() => setCurrentView('about')}
+                    className="hover:text-white transition"
+                  >
+                    {t[language].aboutUs}
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => setCurrentView('careers')}
+                    className="hover:text-white transition"
+                  >
+                    {t[language].careers}
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => setCurrentView('press')}
+                    className="hover:text-white transition"
+                  >
+                    {t[language].press}
+                  </button>
+                </li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4">{t[language].support}</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><button onClick={() => setShowFeedback(true)} className="hover:text-white transition">{t[language].contactFooter}</button></li>
-                <li><button className="hover:text-white transition">{t[language].faq}</button></li>
-                <li><button className="hover:text-white transition">{t[language].help}</button></li>
+                <li>
+                  <button 
+                    onClick={() => setCurrentView('contact')}
+                    className="hover:text-white transition"
+                  >
+                    {t[language].contactFooter}
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => setCurrentView('faq')}
+                    className="hover:text-white transition"
+                  >
+                    {t[language].faq}
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => setCurrentView('help')}
+                    className="hover:text-white transition"
+                  >
+                    {t[language].help}
+                  </button>
+                </li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4">{t[language].legal}</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><button className="hover:text-white transition">{t[language].imprint}</button></li>
-                <li><button className="hover:text-white transition">{t[language].privacy}</button></li>
-                <li><button className="hover:text-white transition">{t[language].terms}</button></li>
+                <li>
+                  <button 
+                    onClick={() => setCurrentView('imprint')}
+                    className="hover:text-white transition"
+                  >
+                    {t[language].imprint}
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => setCurrentView('privacy')}
+                    className="hover:text-white transition"
+                  >
+                    {t[language].privacy}
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => setCurrentView('terms')}
+                    className="hover:text-white transition"
+                  >
+                    {t[language].terms}
+                  </button>
+                </li>
               </ul>
             </div>
           </div>
@@ -1017,9 +1488,12 @@ export default function RoomatePlatform() {
 
       {/* Bottom Navigation (Mobile) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-40">
-        <div className="grid grid-cols-4 gap-1">
+        <div className="grid grid-cols-5 gap-0">
           <button
-            onClick={() => navigateTo('home')}
+            onClick={() => {
+              setCurrentView('home');
+              setShowListings(false);
+            }}
             className={`flex flex-col items-center py-3 ${
               currentView === 'home' ? 'text-sky-400' : 'text-gray-600'
             }`}
@@ -1046,6 +1520,15 @@ export default function RoomatePlatform() {
             <span className="text-xs mt-1">{t[language].favorites}</span>
           </button>
           <button
+            onClick={() => setCurrentView('contact')}
+            className={`flex flex-col items-center py-3 ${
+              currentView === 'contact' ? 'text-sky-400' : 'text-gray-600'
+            }`}
+          >
+            <MessageCircle className="w-6 h-6" />
+            <span className="text-xs mt-1">{t[language].contactUs}</span>
+          </button>
+          <button
             onClick={() => setCurrentView('profile')}
             className={`flex flex-col items-center py-3 ${
               currentView === 'profile' ? 'text-sky-400' : 'text-gray-600'
@@ -1057,10 +1540,380 @@ export default function RoomatePlatform() {
         </div>
       </nav>
 
-      {/* Modals - Contact, Delete, Login, Create Listing, etc. */}
-      {/* These would be added in full implementation */}
-      {/* For brevity, showing basic structure */}
-      
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">{t[language].login}</h2>
+              <button onClick={() => setShowLoginModal(false)}>
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">{t[language].email}</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                  <input
+                    type="email"
+                    required
+                    value={loginForm.email}
+                    onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg"
+                    placeholder="email@beispiel.de"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">{t[language].password}</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                  <input
+                    type="password"
+                    required
+                    value={loginForm.password}
+                    onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-sky-400 text-white py-3 rounded-lg hover:bg-sky-500 transition"
+              >
+                {t[language].login}
+              </button>
+            </form>
+            <p className="text-center mt-4 text-sm text-gray-600">
+              {t[language].noAccountYet}{' '}
+              <button
+                onClick={() => {
+                  setShowLoginModal(false);
+                  setShowRegisterModal(true);
+                }}
+                className="text-sky-400 hover:text-sky-500 font-medium"
+              >
+                {t[language].clickHere}
+              </button>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Register Modal */}
+      {showRegisterModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-6 my-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">{t[language].register}</h2>
+              <button onClick={() => setShowRegisterModal(false)}>
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={handleRegister} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t[language].firstName} *</label>
+                  <input
+                    type="text"
+                    required
+                    value={registerForm.firstName}
+                    onChange={(e) => setRegisterForm({ ...registerForm, firstName: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t[language].lastName} *</label>
+                  <input
+                    type="text"
+                    required
+                    value={registerForm.lastName}
+                    onChange={(e) => setRegisterForm({ ...registerForm, lastName: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">{t[language].email} *</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                  <input
+                    type="email"
+                    required
+                    value={registerForm.email}
+                    onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t[language].password} *</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                    <input
+                      type="password"
+                      required
+                      value={registerForm.password}
+                      onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                      className="w-full pl-10 pr-4 py-2 border rounded-lg"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t[language].confirmPassword} *</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                    <input
+                      type="password"
+                      required
+                      value={registerForm.confirmPassword}
+                      onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
+                      className="w-full pl-10 pr-4 py-2 border rounded-lg"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t[language].phone}</label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                    <input
+                      type="tel"
+                      value={registerForm.phone}
+                      onChange={(e) => setRegisterForm({ ...registerForm, phone: e.target.value })}
+                      className="w-full pl-10 pr-4 py-2 border rounded-lg"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t[language].age}</label>
+                  <input
+                    type="number"
+                    value={registerForm.age}
+                    onChange={(e) => setRegisterForm({ ...registerForm, age: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">{t[language].occupation}</label>
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={registerForm.occupation}
+                    onChange={(e) => setRegisterForm({ ...registerForm, occupation: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg"
+                    placeholder="z.B. Student, Berufstätig..."
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-sky-400 text-white py-3 rounded-lg hover:bg-sky-500 transition"
+              >
+                {t[language].register}
+              </button>
+            </form>
+            <p className="text-center mt-4 text-sm text-gray-600">
+              {t[language].alreadyHaveAccount}{' '}
+              <button
+                onClick={() => {
+                  setShowRegisterModal(false);
+                  setShowLoginModal(true);
+                }}
+                className="text-sky-400 hover:text-sky-500 font-medium"
+              >
+                {t[language].clickHere}
+              </button>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Create Listing Modal */}
+      {showAddListing && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-3xl w-full p-6 my-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">{t[language].createListing}</h2>
+              <button onClick={() => setShowAddListing(false)}>
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmitListing} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">{t[language].listingType} *</label>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setListingForm({ ...listingForm, type: 'room' })}
+                    className={`p-4 border-2 rounded-lg transition ${
+                      listingForm.type === 'room'
+                        ? 'border-sky-400 bg-sky-50'
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <h3 className="font-semibold">{t[language].offerRoom}</h3>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setListingForm({ ...listingForm, type: 'roommate' })}
+                    className={`p-4 border-2 rounded-lg transition ${
+                      listingForm.type === 'roommate'
+                        ? 'border-sky-400 bg-sky-50'
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <h3 className="font-semibold">{t[language].searchRoommate}</h3>
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">{t[language].title} *</label>
+                <input
+                  type="text"
+                  required
+                  value={listingForm.title}
+                  onChange={(e) => setListingForm({ ...listingForm, title: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  placeholder={t[language].titlePlaceholder}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">{t[language].description} *</label>
+                <textarea
+                  required
+                  value={listingForm.description}
+                  onChange={(e) => setListingForm({ ...listingForm, description: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  rows="4"
+                  placeholder={t[language].descriptionPlaceholder}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t[language].city} *</label>
+                  <select
+                    required
+                    value={listingForm.city}
+                    onChange={(e) => setListingForm({ ...listingForm, city: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  >
+                    <option value="Aachen">Aachen</option>
+                    <option value="Berlin">Berlin</option>
+                    <option value="München">München</option>
+                    <option value="Hamburg">Hamburg</option>
+                    <option value="Köln">Köln</option>
+                    <option value="Frankfurt">Frankfurt</option>
+                    <option value="Stuttgart">Stuttgart</option>
+                    <option value="Düsseldorf">Düsseldorf</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t[language].rent} *</label>
+                  <input
+                    type="number"
+                    required
+                    value={listingForm.rent}
+                    onChange={(e) => setListingForm({ ...listingForm, rent: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg"
+                    placeholder="450"
+                  />
+                </div>
+              </div>
+
+              {listingForm.type === 'room' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">{t[language].size} (m²)</label>
+                    <input
+                      type="number"
+                      value={listingForm.squareMeters}
+                      onChange={(e) => setListingForm({ ...listingForm, squareMeters: e.target.value })}
+                      className="w-full px-4 py-2 border rounded-lg"
+                      placeholder="20"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">{t[language].roomCount}</label>
+                    <input
+                      type="number"
+                      value={listingForm.roomCount}
+                      onChange={(e) => setListingForm({ ...listingForm, roomCount: e.target.value })}
+                      className="w-full px-4 py-2 border rounded-lg"
+                      placeholder="3"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t[language].smoking} *</label>
+                  <select
+                    value={listingForm.smoking}
+                    onChange={(e) => setListingForm({ ...listingForm, smoking: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  >
+                    <option value="no">🚭 {t[language].nonSmoker}</option>
+                    <option value="outside">🚬 {t[language].balcony}</option>
+                    <option value="yes">✅ {t[language].smoker}</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t[language].cleanliness} *</label>
+                  <select
+                    value={listingForm.cleanliness}
+                    onChange={(e) => setListingForm({ ...listingForm, cleanliness: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg"
+                  >
+                    <option value="very-clean">✨ {t[language].veryClean}</option>
+                    <option value="normal">👍 {t[language].normal}</option>
+                    <option value="relaxed">😌 {t[language].relaxed}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">{t[language].amenities}</label>
+                <input
+                  type="text"
+                  value={listingForm.amenities}
+                  onChange={(e) => setListingForm({ ...listingForm, amenities: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  placeholder={t[language].amenitiesPlaceholder}
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button 
+                  type="submit"
+                  className="flex-1 bg-sky-400 text-white py-3 rounded-lg hover:bg-sky-500 transition"
+                >
+                  {t[language].post}
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setShowAddListing(false)} 
+                  className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition"
+                >
+                  {t[language].cancel}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Contact Modal */}
       {showContactModal && selectedContact && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
@@ -1072,17 +1925,23 @@ export default function RoomatePlatform() {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">{t[language].name}</label>
+                <label className="block text-sm font-medium text-gray-600 mb-1">{t[language].name}</label>
                 <p className="text-lg">{selectedContact.contact_name}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">{t[language].email}</label>
-                <p className="text-lg text-sky-600">{selectedContact.contact_email}</p>
+                <label className="block text-sm font-medium text-gray-600 mb-1">{t[language].email}</label>
+                <a href={`mailto:${selectedContact.contact_email}`} className="text-lg text-sky-600 hover:text-sky-700">
+                  {selectedContact.contact_email}
+                </a>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">{t[language].phone}</label>
-                <p className="text-lg text-sky-600">{selectedContact.contact_phone}</p>
-              </div>
+              {selectedContact.contact_phone && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">{t[language].phone}</label>
+                  <a href={`tel:${selectedContact.contact_phone}`} className="text-lg text-sky-600 hover:text-sky-700">
+                    {selectedContact.contact_phone}
+                  </a>
+                </div>
+              )}
             </div>
             <button
               onClick={() => setShowContactModal(false)}
@@ -1094,6 +1953,7 @@ export default function RoomatePlatform() {
         </div>
       )}
 
+      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
