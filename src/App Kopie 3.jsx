@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Home, Users, Search, Plus, MapPin, DollarSign, Calendar, User, Heart, X, MessageCircle, Filter, Globe, ChevronDown, Mail, Lock, Phone, Briefcase, Send, ArrowLeft } from 'lucide-react';
-import { supabase, authHelpers, profileHelpers, listingHelpers, favoriteHelpers, feedbackHelpers } from './supabase';
-// import StripePayment from './StripePayment';
-// import PayPalPayment from './PayPalPayment';
+import { supabase, authHelpers, profileHelpers, listingHelpers, favoriteHelpers } from './localAuth';
+import StripePayment from './StripePayment';
+import PayPalPayment from './PayPalPayment';
 import { getCities, addCity } from './cityManager';
 
 
@@ -31,18 +31,9 @@ export default function RoomatePlatform() {
     const [selectedPlan, setSelectedPlan] = useState(null);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [forceUpdate, setForceUpdate] = useState(0); // Force Re-render beim Logout
     const [isLoginMode, setIsLoginMode] = useState(true);
     const [cities, setCities] = useState([]);
     const [newCityInput, setNewCityInput] = useState('');
-    const [showAllCities, setShowAllCities] = useState(false);
-    const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-    const [feedbackForm, setFeedbackForm] = useState({
-        subject: '',
-        message: '',
-        category: 'other',
-        email: ''
-    });
 
     // Contact Form State
     const [contactForm, setContactForm] = useState({
@@ -55,7 +46,7 @@ export default function RoomatePlatform() {
     // Form States
     const [loginForm, setLoginForm] = useState({ email: '', password: '' });
     const [registerForm, setRegisterForm] = useState({
-        firstName: '', lastName: '', email: '', password: '', confirmPassword: '', phone: ''
+        firstName: '', lastName: '', email: '', password: '', confirmPassword: '', phone: '', age: '', occupation: ''
     });
     const [listingForm, setListingForm] = useState({
         type: 'room',
@@ -88,115 +79,36 @@ export default function RoomatePlatform() {
         setCities(getCities());
     }, []);
 
-    // Browser History Navigation
+    // Auth State Management
     useEffect(() => {
-        // Initialisiere mit aktueller View
-        const path = window.location.pathname;
-        const view = path.replace('/', '') || 'home';
-        setCurrentView(view);
-
-        // Höre auf Browser Back/Forward Buttons
-        const handlePopState = (event) => {
-            const view = event.state?.view || 'home';
-            setCurrentView(view);
-        };
-
-        window.addEventListener('popstate', handlePopState);
-
-        return () => {
-            window.removeEventListener('popstate', handlePopState);
-        };
-    }, []);
-
-    // Update URL wenn View sich ändert
-    useEffect(() => {
-        const path = currentView === 'home' ? '/' : `/${currentView}`;
-
-        // Nur wenn sich die URL tatsächlich ändert
-        if (window.location.pathname !== path) {
-            window.history.pushState({ view: currentView }, '', path);
-        }
-    }, [currentView]);
-
-    // Auth State Management - VERBESSERT!
-    useEffect(() => {
-        console.log('🔵 Auth useEffect startet...');
-
         const initAuth = async () => {
-            try {
-                console.log('🔍 Prüfe aktuelle Session...');
-
-                // Hole aktuelle Session
-                const { data: { session }, error } = await supabase.auth.getSession();
-
-                if (error) {
-                    console.error('❌ Session Error:', error);
-                    setLoading(false);
-                    return;
+            const currentUser = await authHelpers.getCurrentUser();
+            if (currentUser) {
+                setUser(currentUser);
+                const { data: profileData } = await profileHelpers.getProfile(currentUser.id);
+                if (profileData) {
+                    setUserProfile(profileData);
                 }
-
-                if (session?.user) {
-                    console.log('✅ Session gefunden!', session.user.email);
-
-                    // Setze User
-                    setUser(session.user);
-
-                    // Lade Profil
-                    const { data: profileData, error: profileError } = await profileHelpers.getProfile(session.user.id);
-
-                    if (profileError || !profileData) {
-                        console.error('⚠️ Profil nicht gefunden!', profileError);
-                        // Logout wenn Profil fehlt
-                        await authHelpers.signOut();
-                        setUser(null);
-                        setUserProfile(null);
-                    } else {
-                        setUserProfile(profileData);
-                        console.log('✅ Profil geladen:', profileData.first_name, profileData.last_name);
-                    }
-                } else {
-                    console.log('ℹ️ Keine aktive Session');
-                }
-
-            } catch (error) {
-                console.error('❌ Init Auth Error:', error);
-            } finally {
-                setLoading(false);
             }
+            setLoading(false);
         };
 
         initAuth();
 
-        // Auth State Change Listener
-        console.log('👂 Registriere Auth Listener...');
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('🔔 Auth State Changed:', event, session?.user?.email);
-
-            if (event === 'SIGNED_IN' && session?.user) {
-                console.log('✅ SIGNED_IN Event!');
+        const { data: { subscription } } = authHelpers.onAuthStateChange(async (event, session) => {
+            if (session?.user) {
                 setUser(session.user);
-
-                // Lade Profil
                 const { data: profileData } = await profileHelpers.getProfile(session.user.id);
                 if (profileData) {
                     setUserProfile(profileData);
-                    setForceUpdate(prev => prev + 1); // ← Force Re-render
-                    console.log('✅ Profil nach Sign-In geladen');
                 }
-            } else if (event === 'SIGNED_OUT') {
-                console.log('👋 SIGNED_OUT Event!');
+            } else {
                 setUser(null);
                 setUserProfile(null);
-                setForceUpdate(prev => prev + 1); // Force Re-render
-            } else if (event === 'TOKEN_REFRESHED') {
-                console.log('🔄 Token refreshed');
             }
         });
 
-        return () => {
-            console.log('🧹 Cleanup Auth Listener');
-            subscription.unsubscribe();
-        };
+        return () => subscription.unsubscribe();
     }, []);
 
     // Load Listings
@@ -420,15 +332,6 @@ export default function RoomatePlatform() {
             messageSent: 'Nachricht gesendet! Wir melden uns bald bei dir.',
             ourAddress: 'Unsere Adresse',
             writeUs: 'Schreib uns',
-            feedback: 'Feedback',
-            sendFeedback: 'Feedback senden',
-            feedbackTitle: 'Gib uns dein Feedback',
-            feedbackSubtitle: 'Hilf uns Sakanera zu verbessern!',
-            feedbackSubject: 'Betreff',
-            feedbackSubjectPlaceholder: 'Worum geht es?',
-            feedbackMessage: 'Deine Nachricht',
-            feedbackMessagePlaceholder: 'Erzähl uns was wir verbessern können...',
-            feedbackSuccess: 'Vielen Dank für dein Feedback!',
         },
         en: {
             logo: 'sakanera',
@@ -587,15 +490,6 @@ export default function RoomatePlatform() {
             messageSent: 'Message sent! We will get back to you soon.',
             ourAddress: 'Our Address',
             writeUs: 'Write to us',
-            feedback: 'Feedback',
-            sendFeedback: 'Send Feedback',
-            feedbackTitle: 'Give us your Feedback',
-            feedbackSubtitle: 'Help us improve Sakanera!',
-            feedbackSubject: 'Subject',
-            feedbackSubjectPlaceholder: 'What is it about?',
-            feedbackMessage: 'Your Message',
-            feedbackMessagePlaceholder: 'Tell us what we can improve...',
-            feedbackSuccess: 'Thank you for your feedback!',
         }
     };
 
@@ -643,7 +537,9 @@ export default function RoomatePlatform() {
                     email: registerForm.email,
                     first_name: registerForm.firstName,
                     last_name: registerForm.lastName,
-                    phone: registerForm.phone || ''
+                    phone: registerForm.phone || '',
+                    age: registerForm.age ? parseInt(registerForm.age) : null,
+                    occupation: registerForm.occupation || ''
                 }
             );
 
@@ -655,14 +551,13 @@ export default function RoomatePlatform() {
             console.log('✅ Profil erstellt:', profileData);
 
             setUserProfile(profileData);
-            setForceUpdate(prev => prev + 1); // ← Force Re-render SOFORT!
 
             console.log('✅ State gesetzt - User:', authData.user.email, 'Profil:', profileData.first_name);
 
             alert(t[language].registrationSuccess);
             setShowRegisterModal(false);
             setRegisterForm({
-                firstName: '', lastName: '', email: '', password: '', confirmPassword: '', phone: ''
+                firstName: '', lastName: '', email: '', password: '', confirmPassword: '', phone: '', age: '', occupation: ''
             });
         } catch (error) {
             alert(`${t[language].error}: ${error.message}`);
@@ -674,20 +569,17 @@ export default function RoomatePlatform() {
 
         try {
             console.log('🔵 Login startet...');
-            console.log('📧 Email:', loginForm.email);
 
             const { data, error } = await authHelpers.signIn(loginForm.email, loginForm.password);
 
             if (error) {
                 console.error('❌ Login Error:', error);
-                alert(`Login fehlgeschlagen: ${error.message}`);
-                return;
+                throw error;
             }
 
-            console.log('✅ Login erfolgreich!');
-            console.log('👤 User:', data.user);
+            console.log('✅ Login erfolgreich:', data.user);
 
-            // Setze User State SOFORT
+            // Setze User State
             setUser(data.user);
 
             console.log('🔵 Lade Profil...');
@@ -695,121 +587,35 @@ export default function RoomatePlatform() {
             // Lade Profil
             const { data: profileData, error: profileError } = await profileHelpers.getProfile(data.user.id);
 
-            if (profileError || !profileData) {
-                console.error('⚠️ Profil nicht gefunden!', profileError);
-                alert('Profil nicht gefunden! Bitte kontaktiere den Support.');
-                await authHelpers.signOut();
-                setUser(null);
-                return;
+            if (profileError) {
+                console.error('⚠️ Profil nicht gefunden:', profileError);
             }
 
-            setUserProfile(profileData);
-            console.log('✅ Profil geladen:', profileData.first_name, profileData.last_name);
+            if (profileData) {
+                setUserProfile(profileData);
+                console.log('✅ Profil geladen:', profileData.first_name);
+            } else {
+                console.warn('⚠️ Kein Profil gefunden für User:', data.user.id);
+            }
 
-            // UI aktualisieren
+            alert(t[language].loginSuccess);
             setShowLoginModal(false);
             setLoginForm({ email: '', password: '' });
-            setForceUpdate(prev => prev + 1); // ← Force Re-render SOFORT!
-
-            console.log('🎉 Login komplett!');
-            console.log('📊 State:', { user: data.user.email, profile: profileData.first_name });
-
-            alert('Erfolgreich angemeldet!');
-
         } catch (error) {
             console.error('❌ Login Fehler:', error);
-            alert(`Fehler: ${error.message}`);
+            alert(`${t[language].error}: ${error.message}`);
         }
     };
 
     const handleLogout = async () => {
         try {
-            console.log('👋 Logout startet...');
-
-            // SOFORT State löschen (nicht auf signOut warten)
-            setUser(null);
+            await authHelpers.signOut();
             setUserProfile(null);
-            setShowProfileDropdown(false);
+            setUser(null);
             setCurrentView('home');
             setShowListings(false);
-            setForceUpdate(prev => prev + 1); // Force Re-render
-
-            console.log('🧹 State sofort gelöscht');
-
-            // Dann Supabase Logout
-            const { error } = await authHelpers.signOut();
-
-            if (error) {
-                console.error('❌ Logout Error:', error);
-                // Aber State ist schon gelöscht, also OK
-            } else {
-                console.log('✅ Supabase Logout erfolgreich');
-            }
-
-            // LocalStorage löschen
-            localStorage.removeItem('sakanera-auth-token');
-
-            console.log('✅ Logout komplett!');
-
-            alert('Erfolgreich abgemeldet!');
-
         } catch (error) {
-            console.error('❌ Logout Fehler:', error);
-            // State ist trotzdem gelöscht
-            alert('Abgemeldet (mit Warnung)');
-        }
-    };
-
-    const handleFeedbackSubmit = async (e) => {
-        e.preventDefault();
-
-        try {
-            console.log('📧 Sende Feedback...');
-
-            // Feedback in Datenbank speichern
-            const { data, error } = await supabase
-                .from('feedback')
-                .insert([
-                    {
-                        user_id: user?.id || null,
-                        user_email: user?.email || feedbackForm.email || 'anonymous@sakanera.com',
-                        user_name: userProfile ? `${userProfile.first_name} ${userProfile.last_name}` : 'Anonymous',
-                        subject: feedbackForm.subject,
-                        message: feedbackForm.message,
-                        category: feedbackForm.category || 'other',
-                        status: 'new'
-                    }
-                ])
-                .select()
-                .single();
-
-            if (error) {
-                console.error('❌ Feedback Error:', error);
-                throw error;
-            }
-
-            console.log('✅ Feedback gespeichert:', data);
-
-            alert(language === 'de'
-                ? 'Vielen Dank für dein Feedback! Wir haben es erhalten und werden es bei info@sakanera.com prüfen.'
-                : 'Thank you for your feedback! We received it and will review it at info@sakanera.com.'
-            );
-
-            // Reset Form
-            setFeedbackForm({
-                subject: '',
-                message: '',
-                category: 'other',
-                email: ''
-            });
-            setShowFeedbackModal(false);
-
-        } catch (error) {
-            console.error('❌ Feedback Fehler:', error);
-            alert(language === 'de'
-                ? `Fehler beim Senden: ${error.message}`
-                : `Error sending feedback: ${error.message}`
-            );
+            alert(`${t[language].error}: ${error.message}`);
         }
     };
 
@@ -847,55 +653,6 @@ export default function RoomatePlatform() {
             );
         } else {
             alert(result.error);
-        }
-    };
-
-    const handleSubmitFeedback = async (e) => {
-        e.preventDefault();
-
-        if (!feedbackForm.subject || !feedbackForm.message) {
-            alert(language === 'de' ? 'Bitte fülle alle Felder aus' : 'Please fill all fields');
-            return;
-        }
-
-        try {
-            const feedbackData = {
-                user_id: user?.id || null,
-                email: user?.email || 'info@sakanera.com',
-                name: userProfile ? `${userProfile.first_name} ${userProfile.last_name}` : 'Anonym',
-                subject: feedbackForm.subject,
-                message: feedbackForm.message,
-                status: 'new'
-            };
-
-            console.log('📧 Sende Feedback:', feedbackData);
-
-            const { data, error } = await feedbackHelpers.createFeedback(feedbackData);
-
-            if (error) {
-                console.error('❌ Feedback Fehler:', error);
-                throw error;
-            }
-
-            console.log('✅ Feedback gespeichert:', data);
-
-            alert(language === 'de'
-                ? 'Vielen Dank für dein Feedback! Wir werden uns baldmöglichst bei dir melden.'
-                : 'Thank you for your feedback! We will get back to you soon.'
-            );
-
-            setShowFeedbackModal(false);
-            setFeedbackForm({
-                subject: '',
-                message: ''
-            });
-
-        } catch (error) {
-            console.error('❌ Fehler:', error);
-            alert(language === 'de'
-                ? `Fehler beim Senden: ${error.message}`
-                : `Error sending feedback: ${error.message}`
-            );
         }
     };
 
@@ -1173,7 +930,7 @@ export default function RoomatePlatform() {
                             </button>
                         </div>
 
-                        <div className="flex items-center gap-4" key={`${user?.id || 'no-user'}-${forceUpdate}`}>
+                        <div className="flex items-center gap-4">
                             <LanguageSwitcher />
 
                             {userProfile && (
@@ -1191,20 +948,7 @@ export default function RoomatePlatform() {
                                     onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                                     className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-sky-400 transition rounded-lg hover:bg-gray-50"
                                 >
-                                    {userProfile ? (
-                                        <>
-                                            <div className="w-8 h-8 bg-sky-400 rounded-full flex items-center justify-center text-white font-semibold">
-                                                {userProfile.first_name?.[0]}{userProfile.last_name?.[0]}
-                                            </div>
-                                            <span className="hidden md:block font-medium">
-                        {userProfile.first_name}
-                      </span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <User className="w-5 h-5" />
-                                        </>
-                                    )}
+                                    <User className="w-5 h-5" />
                                     <ChevronDown className="w-4 h-4" />
                                 </button>
 
@@ -1225,16 +969,6 @@ export default function RoomatePlatform() {
                                                 >
                                                     <User className="w-4 h-4" />
                                                     {t[language].profile}
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        setCurrentView('favorites');
-                                                        setShowProfileDropdown(false);
-                                                    }}
-                                                    className="w-full px-4 py-2 text-left hover:bg-sky-50 transition flex items-center gap-2"
-                                                >
-                                                    <Heart className="w-4 h-4" />
-                                                    {t[language].favorites}
                                                 </button>
                                                 <button
                                                     onClick={() => {
@@ -1314,76 +1048,28 @@ export default function RoomatePlatform() {
                 {/* CITIES VIEW */}
                 {currentView === 'cities' && (
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-                        {/* Zurück Button */}
-                        <button
-                            onClick={() => setCurrentView('home')}
-                            className="flex items-center gap-2 mb-8 text-sky-600 hover:text-sky-700 transition"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                            {language === 'de' ? 'Zurück' : 'Back'}
-                        </button>
 
                         <h2 className="text-4xl font-bold mb-12 text-center">{t[language].citiesPageTitle}</h2>
-
-                        {/* Städte Grid */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                            {(showAllCities ? cities : cities.slice(0, 8)).map((city) => {
-                                const cityListingsCount = listings.filter(l => l.city === city && l.is_active).length;
-                                return (
-                                    <button
-                                        key={city}
-                                        onClick={() => {
-                                            setFilters({ ...filters, city });
-                                            setCurrentView('search');
-                                        }}
-                                        className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition transform hover:scale-105 text-center"
-                                    >
-                                        <div className="text-4xl mb-3">🏙️</div>
-                                        <h3 className="font-semibold text-lg">{city}</h3>
-                                        <p className="text-sm text-gray-500 mt-2">
-                                            {cityListingsCount} {cityListingsCount === 1 ? 'Inserat' : 'Inserate'}
-                                        </p>
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        {/* Mehr/Weniger Button */}
-                        {cities.length > 8 && (
-                            <div className="flex justify-center mt-8">
+                            {['Berlin', 'München', 'Hamburg', 'Köln', 'Frankfurt', 'Stuttgart', 'Düsseldorf', 'Aachen'].map((city) => (
                                 <button
-                                    onClick={() => setShowAllCities(!showAllCities)}
-                                    className="flex items-center gap-2 px-6 py-3 bg-sky-400 text-white rounded-lg hover:bg-sky-500 transition font-semibold"
+                                    key={city}
+                                    onClick={() => {
+                                        setFilters({ ...filters, city });
+                                        setCurrentView('search');
+                                    }}
+                                    className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition transform hover:scale-105 text-center"
                                 >
-                                    {showAllCities ? (
-                                        <>
-                                            <ChevronDown className="w-5 h-5 rotate-180" />
-                                            {language === 'de' ? 'Weniger anzeigen' : 'Show less'}
-                                        </>
-                                    ) : (
-                                        <>
-                                            <ChevronDown className="w-5 h-5" />
-                                            {language === 'de' ? 'Andere Städte anzeigen' : 'Show more cities'}
-                                            {cities.length > 8 && ` (${cities.length - 8})`}
-                                        </>
-                                    )}
+                                    <div className="text-4xl mb-3">🏙️</div>
+                                    <h3 className="font-semibold text-lg">{city}</h3>
                                 </button>
-                            </div>
-                        )}
+                            ))}
+                        </div>
                     </div>
                 )}
 
                 {currentView === 'search' && (
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                        {/* Zurück Button */}
-                        <button
-                            onClick={() => setCurrentView('home')}
-                            className="flex items-center gap-2 mb-4 text-sky-600 hover:text-sky-700 transition"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                            {language === 'de' ? 'Zurück' : 'Back'}
-                        </button>
-
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-3xl font-bold">{t[language].allListings}</h2>
                             <button
@@ -1552,15 +1238,6 @@ export default function RoomatePlatform() {
 
                 {currentView === 'favorites' && (
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                        {/* Zurück Button */}
-                        <button
-                            onClick={() => setCurrentView('home')}
-                            className="flex items-center gap-2 mb-6 text-sky-600 hover:text-sky-700 transition"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                            {language === 'de' ? 'Zurück' : 'Back'}
-                        </button>
-
                         <h2 className="text-3xl font-bold mb-6">{t[language].myFavorites}</h2>
                         {favorites.length === 0 ? (
                             <div className="text-center py-20">
@@ -1613,15 +1290,6 @@ export default function RoomatePlatform() {
                     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                         {userProfile ? (
                             <>
-                                {/* Zurück Button */}
-                                <button
-                                    onClick={() => setCurrentView('home')}
-                                    className="flex items-center gap-2 mb-6 text-sky-600 hover:text-sky-700 transition"
-                                >
-                                    <ArrowLeft className="w-5 h-5" />
-                                    {language === 'de' ? 'Zurück' : 'Back'}
-                                </button>
-
                                 {/* Header mit Name und Avatar */}
                                 <div className="bg-gradient-to-r from-sky-400 to-blue-500 rounded-lg shadow-lg p-8 mb-8 text-white">
                                     <div className="flex items-center gap-6">
@@ -2154,7 +1822,7 @@ export default function RoomatePlatform() {
                             <ul className="space-y-2 text-sm text-gray-400">
                                 <li>
                                     <button
-                                        onClick={() => setShowFeedbackModal(true)}
+                                        onClick={() => setCurrentView('feedback')}
                                         className="hover:text-white transition"
                                     >
                                         {t[language].feedback}
@@ -2379,6 +2047,28 @@ export default function RoomatePlatform() {
                                             className="w-full pl-10 pr-4 py-2 border rounded-lg"
                                         />
                                     </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">{t[language].age}</label>
+                                    <input
+                                        type="number"
+                                        value={registerForm.age}
+                                        onChange={(e) => setRegisterForm({ ...registerForm, age: e.target.value })}
+                                        className="w-full px-4 py-2 border rounded-lg"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">{t[language].occupation}</label>
+                                <div className="relative">
+                                    <Briefcase className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        value={registerForm.occupation}
+                                        onChange={(e) => setRegisterForm({ ...registerForm, occupation: e.target.value })}
+                                        className="w-full pl-10 pr-4 py-2 border rounded-lg"
+                                        placeholder="z.B. Student, Berufstätig..."
+                                    />
                                 </div>
                             </div>
                             <button
@@ -2805,23 +2495,40 @@ export default function RoomatePlatform() {
                                 />
                             </div>
 
-
-                            {/* Buttons */}
-                            <div className="flex gap-4">
-                                <button
-                                    type="button"
-                                    onClick={() => { setShowEditListing(false); setListingToEdit(null); }}
-                                    className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition"
-                                >
-                                    {language === 'de' ? 'Abbrechen' : 'Cancel'}
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 bg-sky-400 text-white py-3 rounded-lg hover:bg-sky-500 transition"
-                                >
-                                    {t[language].saveChanges}
-                                </button>
+                            {/* Rauchen & Sauberkeit */}
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">{t[language].smoking}</label>
+                                    <select
+                                        value={listingForm.smoking || 'no'}
+                                        onChange={(e) => setListingForm({ ...listingForm, smoking: e.target.value })}
+                                        className="w-full px-4 py-2 border rounded-lg"
+                                    >
+                                        <option value="no">{t[language].no}</option>
+                                        <option value="yes">{t[language].yes}</option>
+                                        <option value="outside">{t[language].outside}</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">{t[language].cleanliness}</label>
+                                    <select
+                                        value={listingForm.cleanliness || 'normal'}
+                                        onChange={(e) => setListingForm({ ...listingForm, cleanliness: e.target.value })}
+                                        className="w-full px-4 py-2 border rounded-lg"
+                                    >
+                                        <option value="very_clean">{t[language].veryCleanliness}</option>
+                                        <option value="normal">{t[language].normalCleanliness}</option>
+                                        <option value="relaxed">{t[language].relaxedCleanliness}</option>
+                                    </select>
+                                </div>
                             </div>
+
+                            <button
+                                type="submit"
+                                className="w-full bg-sky-400 text-white py-3 rounded-lg hover:bg-sky-500 transition"
+                            >
+                                {t[language].saveChanges}
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -2954,220 +2661,26 @@ export default function RoomatePlatform() {
                             /* ZAHLUNG DURCHFÜHREN */
                             <>
                                 {selectedPaymentMethod === 'stripe' && (
-                                    <div className="space-y-6">
-                                        <div className="bg-sky-50 rounded-lg p-6">
-                                            <div className="flex justify-between items-center mb-4">
-                                                <div>
-                                                    <div className="text-sm text-gray-600">Zu zahlen:</div>
-                                                    <div className="text-3xl font-bold text-sky-600">{selectedPlan.price.toFixed(2)}€</div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className="text-sm text-gray-600">Paket:</div>
-                                                    <div className="text-lg font-semibold">{selectedPlan.duration} {selectedPlan.duration === 1 ? t[language].month : t[language].months}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-white border-2 border-gray-200 rounded-lg p-6">
-                                            <label className="block text-sm font-medium mb-3 text-gray-700">Kreditkarten-Daten (Demo)</label>
-                                            <input type="text" placeholder="4242 4242 4242 4242" className="w-full px-4 py-2 border rounded-lg mb-3" />
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <input type="text" placeholder="MM/YY" className="px-4 py-2 border rounded-lg" />
-                                                <input type="text" placeholder="CVV" maxLength="3" className="px-4 py-2 border rounded-lg" />
-                                            </div>
-                                        </div>
-
-                                        <div className="flex gap-4">
-                                            <button
-                                                type="button"
-                                                onClick={() => setSelectedPaymentMethod(null)}
-                                                className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition"
-                                            >
-                                                Abbrechen
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    handlePaymentSuccess({
-                                                        paymentMethod: 'stripe',
-                                                        paymentMethodId: 'demo_' + Date.now(),
-                                                        amount: selectedPlan.price,
-                                                        plan: selectedPlan.id
-                                                    });
-                                                }}
-                                                className="flex-1 bg-sky-500 text-white py-3 rounded-lg hover:bg-sky-600 transition font-semibold"
-                                            >
-                                                Jetzt bezahlen {selectedPlan.price.toFixed(2)}€
-                                            </button>
-                                        </div>
-
-                                        <div className="text-center text-xs text-gray-500">
-                                            <p>🔒 Demo-Zahlung (für Testzwecke)</p>
-                                        </div>
-                                    </div>
+                                    <StripePayment
+                                        amount={selectedPlan.price}
+                                        planName={`${selectedPlan.duration} ${selectedPlan.duration === 1 ? t[language].month : t[language].months}`}
+                                        onSuccess={handlePaymentSuccess}
+                                        onError={handlePaymentError}
+                                        onCancel={() => setSelectedPaymentMethod(null)}
+                                    />
                                 )}
 
                                 {selectedPaymentMethod === 'paypal' && (
-                                    <div className="space-y-6">
-                                        <div className="bg-sky-50 rounded-lg p-6">
-                                            <div className="flex justify-between items-center mb-4">
-                                                <div>
-                                                    <div className="text-sm text-gray-600">Zu zahlen:</div>
-                                                    <div className="text-3xl font-bold text-sky-600">{selectedPlan.price.toFixed(2)}€</div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className="text-sm text-gray-600">Paket:</div>
-                                                    <div className="text-lg font-semibold">{selectedPlan.duration} {selectedPlan.duration === 1 ? t[language].month : t[language].months}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-white border-2 border-gray-200 rounded-lg p-6 text-center">
-                                            <div className="text-4xl mb-4">💙</div>
-                                            <div className="font-bold text-xl mb-2">PayPal Demo</div>
-                                            <p className="text-gray-600 mb-4">In Production würde hier PayPal erscheinen</p>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    handlePaymentSuccess({
-                                                        paymentMethod: 'paypal',
-                                                        orderId: 'demo_order_' + Date.now(),
-                                                        payerId: 'demo_payer',
-                                                        amount: selectedPlan.price,
-                                                        plan: selectedPlan.id
-                                                    });
-                                                }}
-                                                className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition font-semibold"
-                                            >
-                                                Mit PayPal bezahlen (Demo)
-                                            </button>
-                                        </div>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => setSelectedPaymentMethod(null)}
-                                            className="w-full bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition"
-                                        >
-                                            Abbrechen
-                                        </button>
-
-                                        <div className="text-center text-xs text-gray-500">
-                                            <p>🔒 Demo-Zahlung (für Testzwecke)</p>
-                                        </div>
-                                    </div>
+                                    <PayPalPayment
+                                        amount={selectedPlan.price}
+                                        planName={`${selectedPlan.duration} ${selectedPlan.duration === 1 ? t[language].month : t[language].months}`}
+                                        onSuccess={handlePaymentSuccess}
+                                        onError={handlePaymentError}
+                                        onCancel={() => setSelectedPaymentMethod(null)}
+                                    />
                                 )}
                             </>
                         )}
-                    </div>
-                </div>
-            )}
-
-            {/* Feedback Modal */}
-            {showFeedbackModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg max-w-2xl w-full p-6">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold">{language === 'de' ? 'Feedback senden' : 'Send Feedback'}</h2>
-                            <button onClick={() => setShowFeedbackModal(false)}>
-                                <X className="w-6 h-6" />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleFeedbackSubmit} className="space-y-4">
-                            {/* Kategorie */}
-                            <div>
-                                <label className="block text-sm font-medium mb-2">
-                                    {language === 'de' ? 'Kategorie' : 'Category'}
-                                </label>
-                                <select
-                                    value={feedbackForm.category || 'other'}
-                                    onChange={(e) => setFeedbackForm({ ...feedbackForm, category: e.target.value })}
-                                    className="w-full px-4 py-2 border rounded-lg"
-                                    required
-                                >
-                                    <option value="bug">{language === 'de' ? '🐛 Bug melden' : '🐛 Report Bug'}</option>
-                                    <option value="feature">{language === 'de' ? '💡 Feature-Wunsch' : '💡 Feature Request'}</option>
-                                    <option value="improvement">{language === 'de' ? '⚡ Verbesserungsvorschlag' : '⚡ Improvement'}</option>
-                                    <option value="other">{language === 'de' ? '💬 Sonstiges' : '💬 Other'}</option>
-                                </select>
-                            </div>
-
-                            {/* Email (falls nicht eingeloggt) */}
-                            {!user && (
-                                <div>
-                                    <label className="block text-sm font-medium mb-2">
-                                        {language === 'de' ? 'Deine Email (optional)' : 'Your Email (optional)'}
-                                    </label>
-                                    <input
-                                        type="email"
-                                        value={feedbackForm.email || ''}
-                                        onChange={(e) => setFeedbackForm({ ...feedbackForm, email: e.target.value })}
-                                        className="w-full px-4 py-2 border rounded-lg"
-                                        placeholder="name@beispiel.de"
-                                    />
-                                </div>
-                            )}
-
-                            {/* Betreff */}
-                            <div>
-                                <label className="block text-sm font-medium mb-2">
-                                    {language === 'de' ? 'Betreff *' : 'Subject *'}
-                                </label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={feedbackForm.subject}
-                                    onChange={(e) => setFeedbackForm({ ...feedbackForm, subject: e.target.value })}
-                                    className="w-full px-4 py-2 border rounded-lg"
-                                    placeholder={language === 'de' ? 'z.B. Fehler beim Inserat erstellen' : 'e.g. Error creating listing'}
-                                />
-                            </div>
-
-                            {/* Nachricht */}
-                            <div>
-                                <label className="block text-sm font-medium mb-2">
-                                    {language === 'de' ? 'Dein Feedback *' : 'Your Feedback *'}
-                                </label>
-                                <textarea
-                                    required
-                                    value={feedbackForm.message}
-                                    onChange={(e) => setFeedbackForm({ ...feedbackForm, message: e.target.value })}
-                                    className="w-full px-4 py-2 border rounded-lg"
-                                    rows="6"
-                                    placeholder={language === 'de'
-                                        ? 'Beschreibe dein Anliegen so detailliert wie möglich...'
-                                        : 'Describe your feedback as detailed as possible...'
-                                    }
-                                />
-                            </div>
-
-                            {/* Info Box */}
-                            <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
-                                <p className="text-sm text-sky-900">
-                                    📧 {language === 'de'
-                                    ? 'Dein Feedback wird an info@sakanera.com gesendet und dort bearbeitet. Wir melden uns schnellstmöglich bei dir!'
-                                    : 'Your feedback will be sent to info@sakanera.com and processed there. We will get back to you as soon as possible!'
-                                }
-                                </p>
-                            </div>
-
-                            {/* Buttons */}
-                            <div className="flex gap-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowFeedbackModal(false)}
-                                    className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition"
-                                >
-                                    {language === 'de' ? 'Abbrechen' : 'Cancel'}
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 bg-sky-400 text-white py-3 rounded-lg hover:bg-sky-500 transition font-semibold"
-                                >
-                                    {language === 'de' ? 'Feedback senden' : 'Send Feedback'}
-                                </button>
-                            </div>
-                        </form>
                     </div>
                 </div>
             )}
@@ -3194,109 +2707,6 @@ export default function RoomatePlatform() {
                                 {t[language].cancel}
                             </button>
                         </div>
-                    </div>
-                </div>
-            )}
-
-            {/* FEEDBACK BUTTON (Floating) */}
-            <button
-                onClick={() => setShowFeedbackModal(true)}
-                className="fixed bottom-6 right-6 bg-sky-500 text-white p-4 rounded-full shadow-lg hover:bg-sky-600 transition z-50 flex items-center gap-2"
-                title={t[language].feedback}
-            >
-                <MessageCircle className="w-6 h-6" />
-                <span className="hidden md:inline font-semibold">{t[language].feedback}</span>
-            </button>
-
-            {/* FEEDBACK MODAL */}
-            {showFeedbackModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-                        <div className="flex justify-between items-center mb-6">
-                            <div>
-                                <h2 className="text-3xl font-bold text-sky-600">{t[language].feedbackTitle}</h2>
-                                <p className="text-gray-600 mt-2">{t[language].feedbackSubtitle}</p>
-                            </div>
-                            <button
-                                onClick={() => setShowFeedbackModal(false)}
-                                className="text-gray-500 hover:text-gray-700"
-                            >
-                                <X className="w-6 h-6" />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleSubmitFeedback} className="space-y-6">
-                            {/* Betreff */}
-                            <div>
-                                <label className="block text-sm font-medium mb-2">
-                                    {t[language].feedbackSubject} *
-                                </label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={feedbackForm.subject}
-                                    onChange={(e) => setFeedbackForm({ ...feedbackForm, subject: e.target.value })}
-                                    placeholder={t[language].feedbackSubjectPlaceholder}
-                                    className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-transparent"
-                                />
-                            </div>
-
-                            {/* Nachricht */}
-                            <div>
-                                <label className="block text-sm font-medium mb-2">
-                                    {t[language].feedbackMessage} *
-                                </label>
-                                <textarea
-                                    required
-                                    value={feedbackForm.message}
-                                    onChange={(e) => setFeedbackForm({ ...feedbackForm, message: e.target.value })}
-                                    placeholder={t[language].feedbackMessagePlaceholder}
-                                    rows="6"
-                                    className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-transparent resize-none"
-                                />
-                            </div>
-
-                            {/* User Info (read-only wenn eingeloggt) */}
-                            {userProfile && (
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                    <p className="text-sm text-gray-600 mb-2">
-                                        {language === 'de' ? 'Gesendet von:' : 'Sent by:'}
-                                    </p>
-                                    <p className="font-semibold">
-                                        {userProfile.first_name} {userProfile.last_name}
-                                    </p>
-                                    <p className="text-sm text-gray-600">{user.email}</p>
-                                </div>
-                            )}
-
-                            {/* Info */}
-                            <div className="bg-blue-50 p-4 rounded-lg flex items-start gap-3">
-                                <MessageCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                                <p className="text-sm text-blue-900">
-                                    {language === 'de'
-                                        ? 'Dein Feedback wird an info@sakanera.com gesendet und hilft uns die Plattform zu verbessern. Wir melden uns baldmöglichst bei dir!'
-                                        : 'Your feedback will be sent to info@sakanera.com and helps us improve the platform. We will get back to you soon!'
-                                    }
-                                </p>
-                            </div>
-
-                            {/* Buttons */}
-                            <div className="flex gap-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowFeedbackModal(false)}
-                                    className="flex-1 px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-                                >
-                                    {language === 'de' ? 'Abbrechen' : 'Cancel'}
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-6 py-3 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition font-semibold"
-                                >
-                                    {t[language].sendFeedback}
-                                </button>
-                            </div>
-                        </form>
                     </div>
                 </div>
             )}
