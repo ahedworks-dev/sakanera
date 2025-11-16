@@ -3,9 +3,14 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  base: '/',
   build: {
-    minify: 'esbuild', // Statt terser
-    target: 'esnext',
-    cssMinify: true
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    minify: 'esbuild'
+  },
+  server: {
+    port: 5173
   }
 })
