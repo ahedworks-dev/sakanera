@@ -1,32 +1,5 @@
-# Dependencies
 node_modules/
-backend/node_modules/
-
-# Environment Variables (WICHTIG!)
 .env
 backend/.env
-.env.local
-.env.production
-
-# Build
 dist/
-build/
-backend/dist/
-
-# Logs
 *.log
-npm-debug.log*
-
-# OS
-.DS_Store
-Thumbs.db
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Temp
-*.tmp
-.cache/
